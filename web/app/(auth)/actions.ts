@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { safeRedirectPath } from "@/lib/auth/redirect";
 import { getSiteUrl } from "@/lib/auth/siteUrl";
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE } from "@/lib/admin/sessionCore";
 
 function formString(formData: FormData, field: string): string {
   const value = formData.get(field);
@@ -58,6 +60,8 @@ export async function signIn(formData: FormData) {
     );
   }
 
+  // A legacy shared-password session must not carry admin access into a customer login.
+  (await cookies()).delete(ADMIN_COOKIE);
   redirect(next);
 }
 
@@ -263,5 +267,6 @@ export async function updatePassword(formData: FormData) {
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  (await cookies()).delete(ADMIN_COOKIE);
   redirect("/");
 }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { sceneClipCounts } from "../lib/sceneClipCounts";
 
-test("counts considering and selected plates independently", () => {
+test("counts saved and in-quote clips including retained legacy states", () => {
   assert.deepEqual(
     sceneClipCounts([
       { status: "considering" },
@@ -12,7 +12,7 @@ test("counts considering and selected plates independently", () => {
       { status: "rejected" },
       { status: "submitted" },
     ]),
-    { considering: 2, selected: 1 },
+    { considering: 3, selected: 2 },
   );
 });
 

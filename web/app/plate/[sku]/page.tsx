@@ -53,7 +53,7 @@ export default async function PlatePage({
 
   if (plate.composite) {
     const clip = await loadImportedComposite(plate);
-    return <><CompositeDetail clip={clip} catalogMode browseHref={browseReturnPath}/><section className="wrap" style={{paddingBottom:64}}><PriceBlock plate={plate}/></section></>;
+    return <><CompositeDetail clip={clip} catalogMode browseHref={browseReturnPath}/><section className="wrap" style={{paddingBottom:64}}><PriceBlock plate={plate} browseReturnPath={browseReturnPath}/></section></>;
   }
 
   const related = (await getLivePlates())
@@ -210,7 +210,7 @@ export default async function PlatePage({
         </div>
 
         <div className="side-stack">
-          <PriceBlock plate={plate} />
+          <PriceBlock plate={plate} browseReturnPath={browseReturnPath} />
           {plate.gps && <GpsPanel gps={plate.gps} plate={plate} />}
         </div>
       </div>

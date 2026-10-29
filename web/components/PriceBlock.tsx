@@ -3,8 +3,13 @@
 import { useState } from "react";
 import type { Plate } from "@platelab/shared";
 import { formatUsd } from "@platelab/shared";
+import Link from "next/link";
+import { safeBrowseReturnPath } from "@/lib/browseSearch";
 
-export function PriceBlock({ plate }: { plate: Plate }) {
+export function PriceBlock({ plate, browseReturnPath }: { plate: Plate; browseReturnPath?: string }) {
+  const saveParams = new URLSearchParams(safeBrowseReturnPath(browseReturnPath).split("?")[1]);
+  saveParams.set("save", plate.sku);
+  saveParams.set("saved", "1");
   const [state, setState] = useState<"idle" | "busy" | "reserved" | "error">(
     plate.availability === "reserved" ? "reserved" : "idle",
   );
@@ -55,6 +60,7 @@ export function PriceBlock({ plate }: { plate: Plate }) {
         </div>
       </div>
       <div className="cta-stack">
+        <Link className="btn primary" href={`/browse?${saveParams}`}>Save to scene</Link>
         <button
           className="btn primary"
           onClick={reserve}
@@ -66,8 +72,8 @@ export function PriceBlock({ plate }: { plate: Plate }) {
               ? "Reserving…"
               : "Reserve · 72h hold"}
         </button>
-        <a className="btn" href={`mailto:plates@theplatelab.com?subject=License ${plate.sku}`}>
-          License now
+        <a className="btn" href={`mailto:plates@theplatelab.com?subject=Quote request for ${plate.sku}`}>
+          Request a quote
         </a>
       </div>
       {state === "error" && (

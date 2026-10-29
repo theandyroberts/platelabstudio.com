@@ -21,9 +21,9 @@ export type SceneClipWorkspaceCandidate = {
 };
 
 const TAB_LABELS: Record<SceneClipWorkspaceTab, string> = {
-  considering: "Considering",
-  selected: "Selected",
-  rejected: "Rejected",
+  considering: "Saved",
+  selected: "In quote",
+  rejected: "Dismissed",
 };
 
 export function SceneClipWorkspace({
@@ -46,7 +46,7 @@ export function SceneClipWorkspace({
 
   async function updateStatus(candidate: SceneClipWorkspaceCandidate, status: SceneClipStatus) {
     setPendingId(candidate.id);
-    setFeedback({ message: status === "rejected" ? "Rejecting candidate…" : "Restoring candidate…", tone: "" });
+    setFeedback({ message: "Saving...", tone: "" });
     try {
       const response = await fetch(
         `/api/scene-clips/${encodeURIComponent(candidate.id)}/status`,
@@ -66,8 +66,8 @@ export function SceneClipWorkspace({
       ));
       setFeedback({
         message: status === "rejected"
-          ? `${candidate.plate.sku} moved to Rejected. Catalog footage was not deleted.`
-          : `${candidate.plate.sku} restored to Considering.`,
+          ? `${candidate.plate.sku} dismissed.`
+          : status === "selected" ? `${candidate.plate.sku} added to quote.` : `${candidate.plate.sku} saved.`,
         tone: "success",
       });
     } catch (error) {
@@ -138,20 +138,26 @@ export function SceneClipWorkspace({
                       <button
                         className={styles.undo}
                         type="button"
-                        disabled={pendingId === candidate.id}
+                        disabled={pendingId !== null}
                         onClick={() => updateStatus(candidate, "considering")}
                       >
-                        Undo rejection
+                        Restore clip
                       </button>
                     ) : (
+                      <>
+                      <button className={styles.action} type="button" disabled={pendingId !== null}
+                        onClick={() => updateStatus(candidate, candidate.status === "selected" || candidate.status === "submitted" ? "considering" : "selected")}>
+                        {candidate.status === "selected" || candidate.status === "submitted" ? "Remove from quote" : "Add to quote"}
+                      </button>
                       <button
                         className={styles.reject}
                         type="button"
-                        disabled={pendingId === candidate.id}
+                        disabled={pendingId !== null}
                         onClick={() => updateStatus(candidate, "rejected")}
                       >
-                        Reject candidate
+                        Dismiss
                       </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -161,7 +167,6 @@ export function SceneClipWorkspace({
         ) : (
           <div className={styles.empty}>
             <h2>No {TAB_LABELS[activeTab].toLowerCase()} clips</h2>
-            <p>Changing a candidate status moves it between these tabs immediately.</p>
           </div>
         )}
       </div>

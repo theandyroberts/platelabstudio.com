@@ -97,6 +97,37 @@ ffmpeg -n -i "$MASTER" -map 0:v:0 -an -c:v libx264 -preset medium -crf 20 -pix_f
 ffmpeg -n -ss 50 -i "$MASTER" -frames:v 1 -vf scale=1920:-1 -q:v 2 -update 1 web/public/media/site/mustang-study14-reflections-poster.jpg
 ```
 
+### Studio visitor controls
+
+Open `/admin/studio-controls` (or `/admin`) and sign in with `ADMIN_PASSWORD`.
+Each right-side flyout control can be shown or hidden individually, by group,
+or with Show all / Hide all. Buying essentials restores the curated visitor
+selection. Save changes publishes the settings; Discard restores the last
+saved selection. Hidden fields and empty groups take no layout space. With
+everything hidden, the flyout and its toggle disappear. Playback, camera-view
+buttons, selection and rendering values are not changed by this visibility policy.
+
+Both `/stage/` and `/imported-stage/` fetch the same no-store
+`/api/studio-controls` policy on load and on returning to the viewer. The initial
+policy is Buying essentials. Failed or invalid policy requests hide the flyout
+instead of revealing technical controls. These are presentation settings, not
+an authorization boundary for rendering features.
+
+Settings are atomically saved to `web/public/media/site/studio-controls.json`
+(relative to the web runtime), on the existing persistent staging media mount.
+They survive application deployments and are intentionally not committed.
+`STUDIO_CONFIG_PATH` can override the absolute file location; every app replica
+must share that durable file. Saves use last-write-wins semantics. The file
+contains public visibility booleans only. Admin pages and save actions both
+require the existing signed admin session; visitors can only read the policy.
+
+Rebuild both static viewers after changes to `viewer/` or the shared registry:
+
+```bash
+npm run build --prefix viewer
+npm run build:imported --prefix viewer
+```
+
 ## Ingest pipeline
 
 Run the read-only check before spending stitch time or changing the catalog:
@@ -172,11 +203,23 @@ $8,000 per stitched minute, prorated per second after a 1-minute minimum
 
 ## Deploy
 
-Coolify deployments select their own branches. As verified on 2026-10-24,
-staging runs `codex/imported-production-catalog` and the public coming-soon site
-runs `agent/studio-coming-soon`. Merging the shared product into `main` does not
-change those deployment selections. Coordinate deployment-branch changes
-separately, preserving the media mount, database configuration and staging gate.
+Staging at `https://staging.platelabstudio.com` deploys tested revisions of
+`main` as commit-tagged images. The application is Coolify resource
+`oql2j5d4q0nvwjc3cgb3ba80` on `tpl`; its Compose configuration lives under
+`/data/coolify/applications/oql2j5d4q0nvwjc3cgb3ba80/`. Recent releases use an
+explicit image rollout, so merging to `main` alone does not deploy staging.
+
+Build with staging's environment, smoke-test a candidate on a loopback port,
+then replace only the staging web image through its existing Compose service.
+Preserve the media mount, database configuration and external staging gate.
+Keep the previous image and a root-only Compose/environment snapshot under
+`/srv/platelab-coolify/deploy-backups/` for rollback. Verify browse, imported
+details, media range requests, authentication and the new release's routes.
+
+The public coming-soon site is a separate application on
+`agent/studio-coming-soon`; a staging release does not update it. Coolify's
+configured source branch may differ from the manually deployed image, so inspect
+the running image revision before deploying or enabling automatic deployment.
 
 [The July deployment notes](docs/2026-07-22-deploy-coolify.md) are historical;
 their statement that the public app tracks `main` no longer describes the

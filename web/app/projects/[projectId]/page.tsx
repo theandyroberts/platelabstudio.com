@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProjectDetailsAutosave } from "@/components/ProjectDetailsAutosave";
-import { SceneImportPanel } from "@/components/SceneImportPanel";
+import { SceneDeleteForm } from "@/components/SceneDeleteForm";
 import { SceneInputWorkspace } from "@/components/SceneInputWorkspace";
 import { sceneClipCounts } from "@/lib/sceneClipCounts";
 import { createClient } from "@/lib/supabase/server";
-import { createScene, importScenes } from "../actions";
+import { createScene, updateSceneBrief } from "../actions";
+import { sceneSearchHref } from "@/lib/sceneSearch";
 
 type ProjectPageProps = {
   params: Promise<{ projectId: string }>;
@@ -16,6 +17,7 @@ type ProjectPageProps = {
     error?: string;
     imported?: string;
     updated?: string;
+    save?: string;
   }>;
 };
 
@@ -156,73 +158,54 @@ export default async function ProjectPage({
         sceneCount={scenes?.length ?? 0}
         sceneTable={
           <div className="scene-table-wrap">
-            <table className="scene-table">
+            <table className="scene-table simple-scene-table">
               <thead>
                 <tr>
-                  <th scope="col">#</th>
                   <th scope="col">Scene #</th>
-                  <th scope="col">Page(s)</th>
                   <th scope="col">Scene</th>
-                  <th scope="col">Plate brief</th>
-                  <th scope="col">Vehicle</th>
-                  <th scope="col">Search</th>
-                  <th scope="col">Considering</th>
-                  <th scope="col">Selected</th>
-                  <th scope="col" aria-label="Open scene" />
+                  <th scope="col">Footage description</th>
+                  <th scope="col">Saved</th>
+                  <th scope="col">In quote</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {scenes?.map((scene) => {
-                  const href = `/projects/${project.id}/scenes/${scene.id}`;
-                  const keywordCount = scene.generated_keywords?.length ?? 0;
+                  const href = sceneSearchHref(scene);
                   const clipCounts = sceneClipCounts(scene.scene_clips);
                   return (
                     <tr key={scene.id}>
-                      <td className="scene-sequence mono">
-                        {String(scene.scene_number).padStart(2, "0")}
-                      </td>
                       <td className="scene-script mono-md">
-                        {scene.script_scene_number || "—"}
-                      </td>
-                      <td className="scene-pages mono-md">
-                        {scene.script_pages || "—"}
+                        {scene.script_scene_number || String(scene.scene_number).padStart(2, "0")}
                       </td>
                       <td className="scene-name-cell">
                         <Link href={href}>{scene.name}</Link>
                       </td>
                       <td className="scene-brief">
                         <Link href={href}>
-                          {scene.search_brief || "Add a plate brief"}
+                          {scene.search_brief || scene.name}
                         </Link>
                       </td>
-                      <td className="scene-vehicle mono">
-                        {scene.vehicle === "undecided"
-                          ? "—"
-                          : scene.vehicle.replaceAll("_", " ")}
-                      </td>
-                      <td>
-                        <span
-                          className={`scene-search-state mono ${
-                            keywordCount ? "is-ready" : ""
-                          }`}
-                        >
-                          {keywordCount
-                            ? `${keywordCount} terms`
-                            : scene.keyword_generation_status === "pending"
-                              ? "Pending"
-                              : "—"}
-                        </span>
-                      </td>
                       <td className="scene-clip-count mono-md">
-                        {clipCounts.considering}
+                        {clipCounts.considering + clipCounts.selected}
                       </td>
                       <td className="scene-clip-count is-selected mono-md">
                         {clipCounts.selected}
                       </td>
                       <td className="scene-open-cell">
-                        <Link href={href} aria-label={`Open ${scene.name}`}>
-                          →
-                        </Link>
+                        <Link href={href}>Search</Link>
+                        <Link href={`/browse?scene=${scene.id}&saved=1`}>Saved clips</Link>
+                        <details className="simple-scene-edit">
+                          <summary>Edit</summary>
+                          <form action={updateSceneBrief} className="workspace-form compact-form">
+                            <input type="hidden" name="projectId" value={project.id} />
+                            <input type="hidden" name="sceneId" value={scene.id} />
+                            <label><span>Scene name</span><input name="sceneName" defaultValue={scene.name} maxLength={200} required /></label>
+                            <label><span>Footage description</span><textarea name="searchBrief" defaultValue={scene.search_brief || ""} maxLength={10000} rows={3} /></label>
+                            <button className="primary-button" type="submit">Save scene</button>
+                          </form>
+                          <SceneDeleteForm projectId={project.id} sceneId={scene.id} sceneName={scene.name} />
+                        </details>
                       </td>
                     </tr>
                   );
@@ -236,6 +219,7 @@ export default async function ProjectPage({
             <h2>Add scene</h2>
             <form action={createScene} className="workspace-form compact-form">
               <input type="hidden" name="projectId" value={project.id} />
+              {query.save && <input type="hidden" name="saveSku" value={query.save} />}
               <label>
                 <span>Scene title</span>
                 <input
@@ -256,28 +240,9 @@ export default async function ProjectPage({
                     maxLength={40}
                   />
                 </label>
-                <label>
-                  <span>Page(s) <em>optional</em></span>
-                  <input
-                    name="scriptPages"
-                    type="text"
-                    placeholder="74–75"
-                    maxLength={80}
-                  />
-                </label>
-                <label>
-                  <span>Vehicle</span>
-                  <select name="vehicle" defaultValue="sedan">
-                    <option value="sedan">Sedan</option>
-                    <option value="suv">SUV</option>
-                    <option value="sports_car">Sports car</option>
-                    <option value="none">No vehicle</option>
-                    <option value="undecided">Undecided</option>
-                  </select>
-                </label>
               </div>
               <label>
-                <span>Scene description / plate brief</span>
+                <span>What footage do you need?</span>
                 <textarea
                   name="searchBrief"
                   placeholder="Open coast, clear horizon, late afternoon…"
@@ -288,29 +253,22 @@ export default async function ProjectPage({
                 <button
                   type="submit"
                   name="intent"
-                  value="add-another"
+                  value="find-plates"
                   className="primary-button"
                 >
-                  + Save and add another
+                  Save and search
                 </button>
                 <button
                   type="submit"
                   name="intent"
-                  value="find-plates"
+                  value="add-another"
                   className="secondary-button"
                 >
-                  Save and find plates
+                  Save and add another
                 </button>
               </div>
             </form>
           </aside>
-        }
-        importPanel={
-          <SceneImportPanel
-            variant="existing-project"
-            projectId={project.id}
-            action={importScenes}
-          />
         }
       />
     </main>

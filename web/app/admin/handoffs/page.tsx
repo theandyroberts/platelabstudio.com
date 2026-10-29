@@ -14,6 +14,7 @@ export default async function HandoffsPage() {
     <main className="wrap" style={{ paddingTop: 48 }}>
       <div className="section-head">
         <h2>Ingest handoffs</h2>
+        <Link className="mono dim" href="/admin/studio-controls">Studio controls</Link>
         <Link className="mono dim" href="/admin/drafts">Draft queue →</Link>
       </div>
       {transfers.length === 0 && <div className="empty-state"><p className="mono">No transfers yet</p></div>}

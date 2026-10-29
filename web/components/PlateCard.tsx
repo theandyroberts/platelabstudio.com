@@ -22,7 +22,10 @@ export function PlateCard({
   browseReturnPath?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const studioHref = plate.composite ? `/plate/${plate.sku}#plate-viewer` : plate.renditions.stagePreview
+  const detailHref = browseReturnPath
+    ? `/plate/${plate.sku}?from=${encodeURIComponent(browseReturnPath)}`
+    : `/plate/${plate.sku}`;
+  const studioHref = plate.composite ? `${detailHref}#plate-viewer` : plate.renditions.stagePreview
     ? buildStudioHref({
         video: publicMediaUrl(plate.renditions.stagePreview),
         label: `${plate.sku} · ${plate.title}`,
@@ -31,9 +34,6 @@ export function PlateCard({
         sku: plate.sku,
       })
     : undefined;
-  const detailHref = browseReturnPath
-    ? `/plate/${plate.sku}?from=${encodeURIComponent(browseReturnPath)}`
-    : `/plate/${plate.sku}`;
 
   const start = () => {
     const v = videoRef.current;

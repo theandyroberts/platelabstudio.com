@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import fs from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { ADMIN_COOKIE, verifySessionCookie } from "@/lib/admin/sessionCore";
+import { getAdminAccess } from "@/lib/admin/session";
 
 /**
  * Authenticated file server for stitch review reports.
@@ -29,9 +28,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  const jar = await cookies();
-  const session = jar.get(ADMIN_COOKIE)?.value;
-  if (!session || !verifySessionCookie(session)) {
+  if (await getAdminAccess() !== "admin") {
     return NextResponse.json({ error: "admin session required" }, { status: 401 });
   }
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { safeRedirectPath } from "@/lib/auth/redirect";
 import { createClient } from "@/lib/supabase/server";
 import { signIn, signInWithGoogle, signUp } from "../actions";
+import { TestLogins } from "@/components/TestLogins";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -28,6 +29,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <main className="auth-shell">
+      <div style={{ width: "min(100%, 520px)" }}>
       <section className="auth-card">
         <p className="mono accent">Build your plate plan</p>
         <h1>{isSignup ? "Start your first project" : "Welcome back"}</h1>
@@ -126,6 +128,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <Link href="/">Return to the catalog</Link>
         </div>
       </section>
+      <TestLogins next={next} />
+      </div>
     </main>
   );
 }

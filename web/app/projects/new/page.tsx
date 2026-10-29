@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SceneImportPanel } from "@/components/SceneImportPanel";
 import { createClient } from "@/lib/supabase/server";
 import { createProject } from "../actions";
 
 type NewProjectPageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; save?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,7 @@ export default async function NewProjectPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login?next=/projects/new");
+  if (!user) redirect(`/login?next=${encodeURIComponent(`/projects/new${params.save ? `?save=${encodeURIComponent(params.save)}` : ""}`)}`);
 
   const [{ data: profile }, { data: membership }] = await Promise.all([
     supabase
@@ -50,7 +49,6 @@ export default async function NewProjectPage({
         </div>
         <div className="lab-task-meta mono">
           {organization?.name && <span>{organization.name}</span>}
-          <span className="accent">Step 1 of 3</span>
         </div>
       </header>
 
@@ -58,6 +56,7 @@ export default async function NewProjectPage({
 
       <form action={createProject} className="workspace-form dense-form">
         <input type="hidden" name="vehicle" value="sedan" />
+        {params.save && <input type="hidden" name="saveSku" value={params.save} />}
         {organization ? (
           <input
             name="organizationName"
@@ -123,10 +122,8 @@ export default async function NewProjectPage({
           </label>
         </div>
 
-        <SceneImportPanel variant="new-project" />
-
-        <details className="form-section manual-scene-section">
-          <summary>Or enter the first scene manually</summary>
+        <section className="form-section manual-scene-section">
+          <h2>First scene</h2>
           <div className="manual-scene-body">
             <div className="manual-scene-grid">
               <label>
@@ -136,6 +133,7 @@ export default async function NewProjectPage({
                   type="text"
                   placeholder="Marta’s escape from the estate"
                   maxLength={200}
+                  required
                 />
               </label>
               <label>
@@ -147,17 +145,8 @@ export default async function NewProjectPage({
                   maxLength={40}
                 />
               </label>
-              <label>
-                <span>Script page(s) <em>optional</em></span>
-                <input
-                  name="scriptPages"
-                  type="text"
-                  placeholder="74–75"
-                  maxLength={80}
-                />
-              </label>
               <label className="manual-scene-brief">
-                <span>Scene description / plate brief</span>
+                <span>What footage do you need?</span>
                 <textarea
                   name="searchBrief"
                   placeholder="Wet urban highway at night, sparse traffic, clean forward travel…"
@@ -169,22 +158,22 @@ export default async function NewProjectPage({
               <button
                 type="submit"
                 name="intent"
-                value="add-more"
+                value="find-plates"
                 className="primary-button"
               >
-                + Create and add another
+                Create and search
               </button>
               <button
                 type="submit"
                 name="intent"
-                value="find-plates"
+                value="add-more"
                 className="secondary-button"
               >
-                Create and find plates
+                Create and add another
               </button>
             </div>
           </div>
-        </details>
+        </section>
       </form>
     </main>
   );
