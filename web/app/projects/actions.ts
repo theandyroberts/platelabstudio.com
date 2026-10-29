@@ -22,6 +22,7 @@ import {
   sceneProductionMetadataFromForm,
 } from "@/lib/sceneProduction";
 import { createClient } from "@/lib/supabase/server";
+import { sceneSearchHref } from "@/lib/sceneSearch";
 
 function formString(formData: FormData, field: string): string {
   const value = formData.get(field);
@@ -169,7 +170,7 @@ export async function createProject(formData: FormData) {
   if (!projectName || !firstSceneName) {
     formError(
       "/projects/new",
-      "Give the project a working title and either import scene JSON or enter the first scene.",
+      "Give the project a working title and name the first scene.",
     );
   }
 
@@ -180,7 +181,7 @@ export async function createProject(formData: FormData) {
         productionMetadata: importedFirstScene.production_metadata,
         status: "ready" as const,
       }
-    : await analyzeScene(searchBrief);
+    : { keywords: [], searchIntentSummary: "", productionMetadata: EMPTY_SCENE_PRODUCTION_METADATA, status: "not_needed" as const };
   const { data, error } = await supabase.rpc("start_project", {
     organization_name: organizationName,
     project_name: projectName,
@@ -248,8 +249,8 @@ export async function createProject(formData: FormData) {
     );
   }
 
-  if (intent === "find-plates") {
-    redirect(`${scenePath(result.project_id, result.scene_id)}?created=1`);
+  if (intent === "find-plates" || formString(formData, "saveSku")) {
+    redirect(sceneSearchHref({ id: result.scene_id, name: firstSceneName, search_brief: searchBrief }, formString(formData, "saveSku") || undefined));
   }
   redirect(`/projects/${result.project_id}?created=1#add-scene`);
 }
@@ -398,7 +399,7 @@ export async function createScene(formData: FormData) {
   }
 
   const searchBrief = formString(formData, "searchBrief");
-  const sceneAnalysis = await analyzeScene(searchBrief);
+  const sceneAnalysis = { keywords: [], searchIntentSummary: "", productionMetadata: EMPTY_SCENE_PRODUCTION_METADATA, status: "not_needed" as const };
   const { data: sceneId, error } = await supabase.rpc(
     "add_project_scene",
     {
@@ -438,10 +439,27 @@ export async function createScene(formData: FormData) {
     );
   }
 
-  if (formString(formData, "intent") === "add-another") {
+  if (formString(formData, "intent") === "add-another" && !formString(formData, "saveSku")) {
     redirect(`/projects/${projectId}?added=1#add-scene`);
   }
-  redirect(`/projects/${projectId}/scenes/${sceneId}?created=1`);
+  redirect(sceneSearchHref({ id: sceneId, name: sceneName, search_brief: searchBrief }, formString(formData, "saveSku") || undefined));
+}
+
+export async function updateSceneBrief(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const projectId = formString(formData, "projectId");
+  const path = `/projects/${projectId}`;
+  if (!user) redirect(`/login?next=${encodeURIComponent(path)}`);
+  const name = formString(formData, "sceneName");
+  const brief = formString(formData, "searchBrief");
+  if (!name || name.length > 200 || brief.length > 10000) formError(path, "Enter a scene name and a description of up to 10,000 characters.");
+  const { data, error } = await supabase.from("scenes")
+    .update({ name, search_brief: brief || null })
+    .eq("id", formString(formData, "sceneId")).eq("project_id", projectId)
+    .is("archived_at", null).select("id").maybeSingle();
+  if (error || !data) formError(path, "This scene could not be updated. Check your project access and retry.");
+  revalidatePath(path);
 }
 
 export async function updateScene(formData: FormData) {

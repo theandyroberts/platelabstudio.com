@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import fs from "node:fs";
 import path from "node:path";
-import { ADMIN_COOKIE, verifySessionCookie } from "@/lib/admin/sessionCore";
+import { getAdminAccess } from "@/lib/admin/session";
 
 /**
  * Review actions for stitch reports: approve / request changes / add a note.
@@ -16,9 +15,7 @@ import { ADMIN_COOKIE, verifySessionCookie } from "@/lib/admin/sessionCore";
 const REPORTS_ROOT = path.join(process.cwd(), "data", "stitch-reports");
 
 export async function POST(req: Request) {
-  const jar = await cookies();
-  const session = jar.get(ADMIN_COOKIE)?.value;
-  if (!session || !verifySessionCookie(session)) {
+  if (await getAdminAccess() !== "admin") {
     return NextResponse.json({ error: "admin session required" }, { status: 401 });
   }
 

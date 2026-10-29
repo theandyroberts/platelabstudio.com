@@ -1,0 +1,35 @@
+.context, .pendingSave { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 16px 0; border-bottom: 1px solid var(--hairline); }
+.context > button, .context > a { gap: 8px; }
+.context > :last-child { margin-left: auto; }
+.destination { display: grid; gap: 6px; min-width: 0; flex: 1; max-width: 440px; font-size: 12px; }
+.destination select { width: 100%; min-width: 0; color: var(--paper); background: var(--ink-2); border: 1px solid var(--hairline-strong); padding: 10px; font: inherit; }
+.pendingSave { align-items: center; }
+.drawer { position: fixed; inset: 0 0 0 auto; margin: 0; width: min(480px, 100%); height: 100dvh; max-height: 100dvh; max-width: 100%; padding: 0; border: 0; border-left: 1px solid var(--hairline-strong); color: var(--paper); background: var(--ink); }
+.drawer::backdrop { background: rgb(0 0 0 / 50%); }
+.drawerContent { padding: 24px; min-height: 100%; }
+.drawerHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.drawerHeader h2 { font-size: 22px; }
+.drawerHeader button { width: 36px; height: 36px; display: grid; place-items: center; }
+.links, .tabs, .clipActions { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+.links a { font-size: 13px; text-decoration: underline; text-underline-offset: 4px; }
+.tabs { border-bottom: 1px solid var(--hairline); }
+.tabs button { padding: 12px 0; margin-right: 12px; font-size: 13px; color: var(--paper-60); border-bottom: 2px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--paper); border-color: var(--orange); }
+.clip { display: grid; grid-template-columns: 104px minmax(0,1fr); gap: 12px; padding: 20px 0; border-bottom: 1px solid var(--hairline); }
+.clip img { width: 104px; aspect-ratio: 16/9; object-fit: cover; }
+.clip h3 { font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; margin-top: 5px; }
+.clip p { font-size: 12px; margin-top: 6px; }
+.clipActions { grid-column: 1/-1; margin: 0; }
+.clipActions > * { font-size: 12px; padding: 8px 10px; }
+.empty, .feedback { color: var(--paper-60); padding: 16px 0; font-size: 13px; }
+.error { color: #ffb4aa; padding: 12px 0; font-size: 13px; }
+.error button { text-decoration: underline; margin-left: 10px; }
+.drawer button:focus-visible, .context button:focus-visible, .destination select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.drawer button:disabled { opacity: .5; cursor: wait; }
+@media (max-width: 680px) {
+  .destination { flex-basis: 100%; max-width: none; }
+  .context { align-items: stretch; }
+  .context > :last-child { margin-left: 0; }
+  .context > button, .context > a { font-size: 12px; }
+  .drawerContent { padding: 18px; }
+}

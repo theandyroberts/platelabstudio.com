@@ -107,12 +107,8 @@ export default async function SceneClipWorkspacePage({
       </div>
       <section className="scene-heading">
         <div>
-          <p className="mono accent">Scene clip workspace</p>
-          <h1>Compare candidates for {scene.name}</h1>
-          <p>
-            Review saved candidates in one place. Rejection only changes this
-            scene’s workflow status; it never deletes footage from the catalog.
-          </p>
+          <p className="mono accent">Saved clips</p>
+          <h1>{scene.name}</h1>
         </div>
       </section>
       {clipsError ? (

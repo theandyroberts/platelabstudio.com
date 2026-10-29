@@ -1,0 +1,10 @@
+.panel { padding: 24px 0 0; width: 100%; }
+.panel h2 { font-size: 18px; margin-bottom: 6px; }
+.account { border-bottom: 1px solid var(--hairline); padding: 18px 0; }
+.account h3 { font-size: 15px; margin-bottom: 10px; }
+.account dl { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 6px 12px; font-size: 13px; }
+.account dt { color: var(--paper-60); }
+.account dd { min-width: 0; overflow-wrap: anywhere; }
+.account code { user-select: all; font-size: 12px; letter-spacing: 0; }
+.account form { margin-top: 14px; }
+.account button { font-size: 13px; }

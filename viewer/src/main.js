@@ -1,4 +1,5 @@
 import './style.css'
+import { installControlVisibility } from './control-visibility.js'
 import {createVehicleLook,defaultVehicleLook} from './vehicle-look.js'
 import {makeWindowGlass,prepareVehicleOptics} from './vehicle-optics.js'
 import {createEnvironmentUpdateGate,captureEnvironment} from './environment-lighting.js'
@@ -450,6 +451,8 @@ app.innerHTML = `
     </aside>
   </main>
 `
+
+installControlVisibility()
 
 // Collapsible control panel: a drawer pull pinned to the viewport/panel edge.
 const workbench = document.querySelector('.workbench')

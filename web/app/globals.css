@@ -2259,3 +2259,15 @@ body:has(> .home-page) .site-header .site-nav .cta:hover {
 .coming-soon-orbit{width:min(80vw,1180px);right:-8vw;top:46%;opacity:1;aspect-ratio:180/124;pointer-events:none}
 .coming-soon-orbit .coming-soon-globe-static{display:block;width:100%;height:auto;opacity:.45}
 @media(max-width:700px){.coming-soon-orbit{width:160vw;right:-72vw;top:40%;bottom:auto;transform:translateY(-50%)}.coming-soon-orbit .coming-soon-globe-static{opacity:.18}}
+.scene-table.simple-scene-table { min-width: 800px; }
+.simple-scene-table th:nth-child(n) { width: auto; }
+.simple-scene-table th:nth-child(3) { width: 32%; }
+.simple-scene-table th:last-child { min-width: 180px; }
+.simple-scene-table .scene-open-cell > a { display: inline-block; margin: 4px 12px 4px 0; font-size: 12px; white-space: nowrap; }
+.simple-scene-edit { margin-top: 8px; }
+.simple-scene-edit summary { cursor: pointer; font-size: 12px; }
+.simple-scene-edit[open] { min-width: 240px; }
+.simple-scene-edit form { margin-top: 12px; }
+.new-project-workspace .manual-scene-section { background: none; border: 0; border-top: 1px solid var(--hairline); padding-top: 20px; }
+.new-project-workspace .manual-scene-section h2 { font-size: 20px; }
+.new-project-workspace .manual-scene-body { padding: 16px 0 0; }

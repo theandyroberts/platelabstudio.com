@@ -17,5 +17,5 @@ export async function login(formData: FormData): Promise<void> {
     path: "/",
     maxAge: 7 * 86400,
   });
-  redirect("/admin/handoffs");
+  redirect("/admin/studio-controls");
 }

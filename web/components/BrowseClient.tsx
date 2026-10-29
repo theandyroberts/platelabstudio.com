@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { BookmarkSimple, MagnifyingGlass, SlidersHorizontal } from "@phosphor-icons/react";
 import type { Plate } from "@platelab/shared";
 import { PlateCard } from "./PlateCard";
 import {
@@ -18,6 +19,8 @@ import {
   type BrowseSort,
 } from "@/lib/browseSearch";
 import styles from "./BrowseClient.module.css";
+import { BrowseSceneTools, useBrowseSceneLibrary } from "./BrowseSceneTools";
+import { sceneBrowseParams } from "@/lib/sceneSearch";
 
 /**
  * Faceted hybrid search. The initial database catalog renders immediately,
@@ -66,7 +69,6 @@ function FacetGroup({
 }
 
 export function BrowseClient({ plates }: { plates: Plate[] }) {
-  const router = useRouter();
   const params = useSearchParams();
   const searchRef = useRef<HTMLInputElement>(null);
   const facets = useMemo(() => availableBrowseFacets(plates), [plates]);
@@ -85,13 +87,36 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [filters, setFilters] = useState<BrowseFilters>(() =>
-    browseFiltersFromParams(params),
-  );
-  const [sort, setSort] = useState<BrowseSort>(() =>
-    browseSortFromParams(params),
-  );
-  const [page, setPage] = useState(() => browsePageFromParams(params));
+  const filters = useMemo(() => browseFiltersFromParams(params), [params]);
+  const sort = browseSortFromParams(params);
+  const page = browsePageFromParams(params);
+  const sceneId = params.get("scene") || "";
+  const pendingSku = params.get("save");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const replaceParams = (next: URLSearchParams) => {
+    window.history.replaceState(null, "", `/browse${next.size ? `?${next}` : ""}`);
+  };
+  const setPage = (nextPage: number) => replaceParams(sceneBrowseParams(browseParams({ filters, sort, page: nextPage }), sceneId, pendingSku));
+  const setSort = (nextSort: BrowseSort) => replaceParams(sceneBrowseParams(browseParams({ filters, sort: nextSort }), sceneId, pendingSku));
+  const setSceneId = (id: string) => {
+    try { if (id) sessionStorage.setItem("platelab-search-scene", id); else sessionStorage.removeItem("platelab-search-scene"); } catch { /* Storage is optional. */ }
+    replaceParams(sceneBrowseParams(new URLSearchParams(params), id, pendingSku));
+  };
+  const setPendingSku = (sku: string | null) => replaceParams(sceneBrowseParams(new URLSearchParams(params), sceneId, sku));
+  const returnPath = `/browse${params.size ? `?${params}` : ""}`;
+  const sceneLibrary = useBrowseSceneLibrary(sceneId, returnPath, setPendingSku);
+  const showSaved = params.get("saved") === "1";
+  useEffect(() => { if (showSaved) sceneLibrary.setOpen(true); }, [showSaved, sceneLibrary.setOpen]);
+  useEffect(() => {
+    if (!sceneLibrary.library?.authenticated) return;
+    try {
+      if (sceneId) sessionStorage.setItem("platelab-search-scene", sceneId);
+      else {
+        const lastScene = sessionStorage.getItem("platelab-search-scene");
+        if (lastScene && sceneLibrary.library.scenes.some(scene => scene.id === lastScene)) setSceneId(lastScene);
+      }
+    } catch { /* The URL still carries the scene when browser storage is unavailable. */ }
+  }, [sceneId, sceneLibrary.library]);
   const [results, setResults] = useState(plates);
   const [searching, setSearching] = useState(false);
   const [semantic, setSemantic] = useState(false);
@@ -102,16 +127,8 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
   const [searchAttempt, setSearchAttempt] = useState(0);
 
   const set = (patch: Partial<BrowseFilters>) => {
-    setPage(1);
-    setFilters((prev) => ({ ...prev, ...patch }));
+    replaceParams(sceneBrowseParams(browseParams({ filters: { ...filters, ...patch }, sort }), sceneId, pendingSku));
   };
-
-  // Mirror the active filters into the URL. Done in an effect, not inside the
-  // state updater, so we never trigger a Router update during render.
-  useEffect(() => {
-    const sp = browseParams({ filters, sort, page });
-    router.replace(`/browse${sp.size ? `?${sp}` : ""}`, { scroll: false });
-  }, [filters, page, router, sort]);
 
   const active =
     !!filters.q ||
@@ -147,6 +164,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
           semantic: boolean;
           degraded?: boolean;
         };
+        if (abortController.signal.aborted) return;
         setResults(body.plates);
         setSemantic(body.semantic);
         setDegraded(
@@ -192,18 +210,18 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
     () => summarizeBrowseFilters(filters),
     [filters],
   );
-  const browseReturnParams = browseParams({
+  const browseReturnParams = sceneBrowseParams(browseParams({
     filters,
     sort,
     page: paginated.page,
-  });
+  }), sceneId, pendingSku);
   const browseReturnPath = `/browse${
     browseReturnParams.size ? `?${browseReturnParams}` : ""
   }`;
 
   useEffect(() => {
-    if (page !== paginated.page) setPage(paginated.page);
-  }, [page, paginated.page]);
+    if (!searching && page !== paginated.page) setPage(paginated.page);
+  });
 
   const clearAll = () => {
     set({
@@ -225,16 +243,30 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
   };
 
   return (
-    <div className="browse-layout">
-      <aside className="filter-rail">
+    <div className={styles.workspace}>
+      <h1 className="sr-only">Search plates</h1>
+      {params.get("error") && <p className="auth-alert error" role="alert">{params.get("error")}</p>}
+      <BrowseSceneTools state={sceneLibrary} sceneId={sceneId} pendingSku={pendingSku}
+        onSceneChange={setSceneId} onPendingSave={setPendingSku}
+        onSearchScene={scene => {
+          const next = new URLSearchParams({ q: scene.brief || scene.name, scene: scene.id });
+          if (pendingSku) next.set("save", pendingSku);
+          replaceParams(next);
+        }} />
+      <div className={styles.searchBar}>
+        <MagnifyingGlass size={24} aria-hidden="true" />
         <input
           ref={searchRef}
           className="search-input"
-          placeholder="SEARCH PLATES, TAGS, OBJECTS…"
+          placeholder="Describe the footage you need..."
           value={filters.q}
           onChange={(e) => set({ q: e.target.value })}
           aria-label="Search plates"
         />
+        <button className="secondary-button" aria-expanded={filtersOpen} aria-controls="plate-search-filters" onClick={() => setFiltersOpen(value => !value)}><SlidersHorizontal size={18} /> Filters</button>
+      </div>
+      <div className={styles.searchLayout} data-filters-open={filtersOpen}>
+      <aside id="plate-search-filters" className={styles.filters} hidden={!filtersOpen}>
         <FacetGroup
           label="Shot type"
           options={facets.shotType}
@@ -326,7 +358,6 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
                 value={sort}
                 onChange={(event) => {
                   setSort(event.target.value as BrowseSort);
-                  setPage(1);
                 }}
                 aria-label="Sort plate results"
               >
@@ -388,11 +419,15 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
           >
             <div className="plate-grid">
               {paginated.items.map((p) => (
+                <div key={p.sku} className={styles.resultCard}>
                 <PlateCard
-                  key={p.sku}
                   plate={p}
                   browseReturnPath={browseReturnPath}
                 />
+                <button className={`secondary-button ${styles.saveClip}`} disabled={sceneLibrary.loading || sceneLibrary.pending || !!sceneLibrary.library?.clips.some(clip => clip.plate.sku === p.sku && clip.status !== "rejected")} onClick={() => sceneLibrary.save(p.sku)}>
+                  <BookmarkSimple size={16} /> {sceneLibrary.library?.clips.some(clip => clip.plate.sku === p.sku && clip.status !== "rejected") ? "Saved to scene" : "Save to scene"}
+                </button>
+                </div>
               ))}
             </div>
             {paginated.pageCount > 1 && (
@@ -445,6 +480,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

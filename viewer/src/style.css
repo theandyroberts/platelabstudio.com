@@ -347,6 +347,11 @@ h1 {
   padding-top: 4px;
 }
 
+.visitor-control-hidden { display: none !important; }
+.workbench.has-no-visitor-controls { grid-template-columns: minmax(0, 1fr) 0 !important; }
+.control-group:not(.visitor-control-hidden) { margin-top: 0; padding-top: 4px; }
+.control-group:not(.visitor-control-hidden) ~ .control-group:not(.visitor-control-hidden) { padding-top: 18px; }
+
 .group-title {
   display: flex;
   align-items: center;
