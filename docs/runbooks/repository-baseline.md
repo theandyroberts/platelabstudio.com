@@ -1,6 +1,6 @@
 # One repository, one development branch
 
-Canonical repository: `https://github.com/theandyroberts/meridian_public_site`
+Canonical repository: `https://github.com/theandyroberts/platelabstudio.com`
 
 Active branch: **`main`**
 

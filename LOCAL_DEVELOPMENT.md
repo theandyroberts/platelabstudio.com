@@ -7,7 +7,7 @@ Project: `/Users/andrewroberts/Projects/platelabstudio.com/website`
 Use this repository's **`main`** branch for all ongoing development. It contains
 the full staging product, production coming-soon page, viewer, ingest pipeline
 and team review. The GitHub repository is
-`theandyroberts/meridian_public_site`.
+`theandyroberts/platelabstudio.com`.
 
 The October 31 consolidation incorporated the latest staging revision plus
 previously uncommitted pipeline/review work and missing launch-page features.
