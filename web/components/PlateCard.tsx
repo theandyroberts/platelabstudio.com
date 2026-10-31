@@ -50,13 +50,13 @@ export function PlateCard({
 
   return (
     <article
-      className="plate-card"
+      className={`plate-card${plate.composite ? " plate-card-composite" : ""}`}
       onMouseEnter={start}
       onMouseLeave={stop}
       onFocus={start}
-      onBlur={stop}
+      onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) stop(); }}
     >
-      <Link href={detailHref} className="plate-card-main">
+      <Link href={detailHref} className="plate-card-preview" aria-label={`Preview ${plate.title}`}>
         <div className="frame">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -75,34 +75,37 @@ export function PlateCard({
           <span className="sku-chip mono">{plate.sku}</span>
           <span className="dur-chip mono">{formatDuration(plate.media.durationSec)}</span>
         </div>
-        <div className="body">
-          <h3>{plate.title}</h3>
-          <div className="meta">
-            <span className="mono dimmer">
-              {plate.location.city}, {plate.location.region}
-            </span>
-            <span className="mono accent">{formatUsd(plate.pricing.totalUsd)}</span>
-          </div>
-          <div className="badges">
-            <span className="badge">{plate.shotType}</span>
-            <span className="badge">{plate.timeOfDay}</span>
-            {plate.imu.collected && <span className="badge imu">IMU</span>}
-            {plate.stageCompat.includes("led-volume") && (
-              <span className="badge">LED Volume</span>
-            )}
-          </div>
-        </div>
       </Link>
+      <div className="body">
+        <h3><Link href={detailHref}>{plate.title}</Link></h3>
+        <div className="meta">
+          <span className="mono dimmer">
+            {plate.location.city}, {plate.location.region}
+          </span>
+          <span className="mono accent">{formatUsd(plate.pricing.totalUsd)}</span>
+        </div>
+        <div className="badges">
+          <span className="badge">{plate.shotType}</span>
+          <span className="badge">{plate.timeOfDay}</span>
+          {plate.imu.collected && <span className="badge imu">IMU</span>}
+          {plate.stageCompat.includes("led-volume") && (
+            <span className="badge">LED Volume</span>
+          )}
+        </div>
+      </div>
       <div className="plate-card-actions">
         {studioHref ? (
           <Link href={studioHref} className="plate-card-studio mono">
-            {plate.composite ? "Open in Lab 360" : "Open in Studio"} <span aria-hidden="true">→</span>
+            Open in Lab <span aria-hidden="true">→</span>
           </Link>
         ) : (
           <span className="plate-card-studio is-unavailable mono">
-            Studio preview pending
+            Lab preview pending
           </span>
         )}
+        <button type="button" className="plate-card-project mono" disabled title="Add to project will be available soon">
+          Add to project <span aria-hidden="true">+</span>
+        </button>
       </div>
     </article>
   );

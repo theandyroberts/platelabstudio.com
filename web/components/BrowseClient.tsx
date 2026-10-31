@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { BookmarkSimple, MagnifyingGlass, SlidersHorizontal } from "@phosphor-icons/react";
+import { MagnifyingGlass, SlidersHorizontal } from "@phosphor-icons/react";
 import type { Plate } from "@platelab/shared";
 import { PlateCard } from "./PlateCard";
 import {
@@ -417,19 +417,15 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
             data-loading={searching}
             aria-busy={searching}
           >
-            <div className="plate-grid">
+            <div className="plate-collection"><div className="plate-grid">
               {paginated.items.map((p) => (
-                <div key={p.sku} className={styles.resultCard}>
                 <PlateCard
+                  key={p.sku}
                   plate={p}
                   browseReturnPath={browseReturnPath}
                 />
-                <button className={`secondary-button ${styles.saveClip}`} disabled={sceneLibrary.loading || sceneLibrary.pending || !!sceneLibrary.library?.clips.some(clip => clip.plate.sku === p.sku && clip.status !== "rejected")} onClick={() => sceneLibrary.save(p.sku)}>
-                  <BookmarkSimple size={16} /> {sceneLibrary.library?.clips.some(clip => clip.plate.sku === p.sku && clip.status !== "rejected") ? "Saved to scene" : "Save to scene"}
-                </button>
-                </div>
               ))}
-            </div>
+            </div></div>
             {paginated.pageCount > 1 && (
               <nav className={styles.pagination} aria-label="Plate result pages">
                 <button

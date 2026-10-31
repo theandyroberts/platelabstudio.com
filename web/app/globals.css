@@ -1890,56 +1890,86 @@ body::before {
 .section-head h2 { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
 .section-head a:hover { color: var(--orange); }
 
-/* ── plate cards ── */
-.plate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
-@media (max-width: 1080px) { .plate-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 680px) { .plate-grid { grid-template-columns: 1fr; } }
+/* Shared navigation remains readable alongside the higher-contrast catalog. */
+.site-header { --paper-60: #d4d2cb; --paper-38: #bdbbb5; }
 
-.plate-card { display: block; background: var(--ink-2); border: 1px solid var(--hairline); transition: border-color 0.2s, transform 0.2s; }
-.plate-card:hover { border-color: var(--orange); transform: translateY(-2px); }
-.plate-card-main { display: block; }
-.plate-card .frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--ink-3); }
+/* ── plate cards ── */
+/* Collections respond to their available width, including an open filter rail. */
+.plate-collection { container: plate-collection / inline-size; }
+.plate-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+.plate-card {
+  display: grid; grid-template-areas: "preview" "info" "actions";
+  grid-template-rows: auto 1fr auto; min-width: 0;
+  background: var(--ink-2); border: 1px solid #55535a;
+  transition: border-color 0.2s;
+}
+.plate-card:hover { border-color: #e6a178; }
+.plate-card-preview { display: block; grid-area: preview; min-width: 0; align-self: start; }
+.plate-card .frame { position: relative; aspect-ratio: 20 / 10; overflow: hidden; background: var(--ink-3); }
 .plate-card .frame img, .plate-card .frame video {
-  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top;
+}
+/* Posters contain the upper 4096x1152 strip (32:9). Crop that strip to its
+   centered 2304x1152 forward view (20:10). For the full 4096x2048 movie,
+   use the same scale and horizontal center, clipping the unused lower area.
+   Both axes retain the source proportions; no stretching. */
+.plate-card-composite .frame video {
+  inset: 0 auto auto 50%; width: 177.777778%; height: auto;
+  aspect-ratio: 2 / 1; transform: translateX(-50%);
 }
 .plate-card .frame video { opacity: 0; transition: opacity 0.25s; }
 .plate-card .frame video.playing { opacity: 1; }
-.plate-card .sku-chip {
-  position: absolute; left: 10px; top: 10px;
-  background: rgba(14, 14, 16, 0.78);
-  padding: 4px 8px;
-  color: var(--paper-60);
+.plate-card .sku-chip, .plate-card .dur-chip {
+  position: absolute; padding: 4px 8px; color: #fffaf2;
+  background: rgba(10, 10, 12, 0.9); font-size: 11px; letter-spacing: 0.08em;
 }
-.plate-card .dur-chip {
-  position: absolute; right: 10px; bottom: 10px;
-  background: rgba(14, 14, 16, 0.78);
-  padding: 4px 8px;
+.plate-card .sku-chip { left: 10px; top: 10px; }
+.plate-card .dur-chip { right: 10px; bottom: 10px; }
+.plate-card .body { grid-area: info; min-width: 0; padding: 18px; border-top: 1px solid #55535a; }
+.plate-card h3 { font-size: 20px; font-weight: 600; line-height: 1.35; color: #fffaf2; overflow-wrap: anywhere; }
+.plate-card .meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-top: 12px; align-items: baseline; }
+.plate-card .meta .mono { font-size: 12px; letter-spacing: 0.06em; }
+.plate-card .meta .dimmer { color: #d4d2cb; }
+.plate-card .meta .accent { color: #ffb385; white-space: nowrap; }
+.plate-card .badges { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.plate-card .badge { color: #e0ddd6; border-color: #77737a; letter-spacing: 0.06em; }
+.plate-card .badge.imu { color: #ffb385; border-color: #d89266; }
+.plate-card-actions { grid-area: actions; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 18px 18px; }
+.plate-card-studio, .plate-card-project {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-width: 0; min-height: 46px; padding: 11px 14px;
+  font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
 }
-.plate-card .body { padding: 16px 16px 14px; border-top: 1px solid var(--hairline); }
-.plate-card h3 { font-size: 17px; font-weight: 600; line-height: 1.3; }
-.plate-card .meta { display: flex; justify-content: space-between; margin-top: 10px; align-items: center; }
-.plate-card .badges { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-.plate-card-actions { padding: 0 16px 14px; }
-.plate-card-studio {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 42px;
-  padding: 10px 12px;
-  color: var(--ink);
-  background: var(--orange);
-  border: 1px solid var(--orange);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.plate-card-studio { color: #100d0b; background: #e9a06e; border: 1px solid #e9a06e; font-weight: 600; }
+.plate-card-studio:hover { background: #f5b78c; }
+.plate-card-project { color: #f4f1ea; background: #222126; border: 1px solid #969198; }
+.plate-card-project:disabled { opacity: 1; cursor: not-allowed; }
+.plate-card-studio.is-unavailable { color: #d4d2cb; background: transparent; border-color: #77737a; }
+.plate-card a:focus-visible { outline: 2px solid #fffaf2; outline-offset: 3px; }
+@container plate-collection (max-width: 1050px) {
+  .plate-grid { grid-template-columns: minmax(0, 1fr); }
+  .plate-card {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    grid-template-areas: "preview info" "actions info";
+    grid-template-rows: auto 1fr;
+  }
+  .plate-card .body { padding: 14px; border-top: 0; border-left: 1px solid #55535a; }
+  .plate-card h3 { font-size: 16px; }
+  .plate-card .meta { flex-direction: column; gap: 7px; }
+  .plate-card .meta .mono { font-size: 11px; }
+  .plate-card .badges { gap: 5px; margin-top: 12px; }
+  .plate-card .badge { padding: 3px 5px; font-size: 9px; }
+  .plate-card-actions { align-self: start; padding: 14px; }
 }
-.plate-card-studio:hover,
-.plate-card-studio:focus-visible { background: #d97f50; outline: none; }
-.plate-card-studio.is-unavailable {
-  color: var(--paper-38);
-  background: transparent;
-  border-color: var(--hairline);
+@container plate-collection (max-width: 600px) {
+  .plate-card { grid-template-columns: minmax(0, 1fr); grid-template-areas: "preview" "info" "actions"; grid-template-rows: auto 1fr auto; }
+  .plate-card .body { border-left: 0; border-top: 1px solid #55535a; }
+  .plate-card h3 { font-size: 18px; }
+  .plate-card .meta { flex-direction: row; }
+  .plate-card-actions { padding-top: 0; }
+  .plate-card-studio, .plate-card-project { font-size: 11px; padding: 10px; letter-spacing: 0.025em; }
 }
+@media (max-width: 680px) { .plate-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .plate-previs-action {
   margin: 24px 0 28px;

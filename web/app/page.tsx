@@ -108,11 +108,11 @@ export default async function HomePage() {
             Browse all plates →
           </Link>
         </div>
-        <div className="plate-grid">
+        <div className="plate-collection"><div className="plate-grid">
           {featured.map((p) => (
             <PlateCard key={p.sku} plate={p} />
           ))}
-        </div>
+        </div></div>
         {featured.length === 0 && (
           <div className="empty-state">
             <p className="mono">Catalog is empty</p>

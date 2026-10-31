@@ -223,7 +223,7 @@ export default async function PlatePage({
               Browse all →
             </Link>
           </div>
-          <div className="plate-grid">
+          <div className="plate-collection"><div className="plate-grid">
             {related.map((p) => (
               <PlateCard
                 key={p.sku}
@@ -231,7 +231,7 @@ export default async function PlatePage({
                 browseReturnPath={browseReturnPath}
               />
             ))}
-          </div>
+          </div></div>
         </section>
       )}
     </main>
