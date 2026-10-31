@@ -66,3 +66,11 @@
 @media(max-width:800px){.panoramaRow{grid-template-columns:minmax(0,1fr)}.panoramaRow .previewFrame{aspect-ratio:32/9;min-height:160px}.panoramaAside{border-left:0;border-top:1px solid #343c32}.panoramaAside .map{max-height:280px}.notableLabels{border-left:0;border-top:1px solid #343c32;padding:24px 0 0}}
 
 .stageLoading{position:absolute;inset:0;overflow:hidden;background:#080b07;pointer-events:none}.stageLoading>span{position:absolute;left:16px;bottom:16px;padding:8px 12px;border:1px solid #ffffff30;border-radius:4px;background:#10150fe8;color:#e3e3d5;font-size:12px}
+
+/* Detail playback shows the entire source. Only catalog cards use the forward crop.
+   Contain also preserves the full frame inside the expanded player's viewport. */
+.player[data-preview-mode="panorama"] .previewFrame{aspect-ratio:2/1;min-height:0}
+.player[data-preview-mode="panorama"] .panoramaLayer{display:grid;place-items:center}
+.player[data-preview-mode="panorama"] .crop{width:100%;height:100%;aspect-ratio:auto}
+.player[data-preview-mode="panorama"] .crop video{width:100%;height:100%;aspect-ratio:auto;object-fit:contain}
+.player[data-preview-mode="panorama"] .playerPoster{object-fit:contain}

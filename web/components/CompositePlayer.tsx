@@ -111,7 +111,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
     <div className={styles.viewerBar}>
       <div className={styles.modeSwitch} role="group" aria-label="Preview view">
         <button aria-pressed={mode==='stage'} className={mode==='stage'?styles.active:''} onClick={()=>chooseMode('stage')}><span aria-hidden="true">◉</span> Lab 360</button>
-        <button aria-pressed={mode==='panorama'} className={mode==='panorama'?styles.active:''} onClick={()=>chooseMode('panorama')}><span aria-hidden="true">▭</span> Panoramic view <small>32:9</small></button>
+        <button aria-pressed={mode==='panorama'} className={mode==='panorama'?styles.active:''} onClick={()=>chooseMode('panorama')}><span aria-hidden="true">▭</span> Panoramic view <small>Full frame</small></button>
       </div>
       <div className={styles.viewerActions}><button className={`${styles.autoSwitch} ${auto?styles.autoSwitchOn:''}`} aria-pressed={auto} onClick={()=>setAuto(value=>!value)}>Auto-switch <span>{AUTO_SWITCH_SECONDS}s</span></button><button ref={expandButton} className={styles.fullLabButton} onClick={openFullLab}><span aria-hidden="true">⛶</span> Full Lab</button></div>
     </div>
