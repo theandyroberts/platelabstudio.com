@@ -1,0 +1,103 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "7b47fd5c66cc4e9d49b54c2c59d3b250de42a5f2e0a029da23a2534a38434b6c",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-cc22c18fee495c72",
+      "expected": {
+        "label": "Landscaped eastern bridge approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Landscaped bridge approach"
+      }
+    },
+    {
+      "id": "label-ae605e2541256507",
+      "expected": {
+        "label": "Repeated contemporary arch bays",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Monumental concrete-arch bridge"
+      }
+    },
+    {
+      "id": "label-c62c97e21baf9060",
+      "expected": {
+        "label": "Utility-corridor arches and close foreground traffic",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial river crossing"
+      }
+    },
+    {
+      "id": "label-40f5391b3fbd8098",
+      "expected": {
+        "label": "Western industrial landing and redevelopment",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse district and construction site"
+      }
+    },
+    {
+      "id": "label-7cc43cc3f5998436",
+      "expected": {
+        "label": "Soft, hazy-looking daylight and dry-looking surfaces",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-72e7a0794dd2c1d0",
+      "expected": {
+        "label": "Spacious monumental-industrial mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Quiet awe",
+        "detail": "Repeating pale arches and broad sky give the crossing a calm, monumental scale.",
+        "category": "mood",
+        "start": 6,
+        "end": 34,
+        "evidenceIds": [
+          "frame-6",
+          "frame-18",
+          "frame-23",
+          "frame-28",
+          "frame-34",
+          "view-16--45",
+          "view-32--45",
+          "source-12",
+          "source-24"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Industrial austerity",
+      "detail": "Warehouse walls, utility lines and closer traffic replace the open bridge with a harder, workaday feeling.",
+      "category": "mood",
+      "start": 53,
+      "end": 67,
+      "evidenceIds": [
+        "frame-53",
+        "frame-56",
+        "frame-60",
+        "frame-64",
+        "frame-67",
+        "detail-54--45",
+        "detail-67--45",
+        "detail-67-45"
+      ],
+      "id": "mood-label-40f5391b3fbd8098",
+      "sourceLabelId": "label-40f5391b3fbd8098"
+    }
+  ]
+}

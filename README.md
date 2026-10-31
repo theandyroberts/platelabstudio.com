@@ -21,7 +21,11 @@ Design spec: [docs/specs/2026-06-10-platelab-design.md](docs/specs/2026-06-10-pl
 
 Requires **Node 22**. `main` is the shared development baseline for the full
 product, including the latest imported detail page, stage viewer and ingest
-pipeline. Start feature branches from an up-to-date `main`.
+pipeline. `main` is the single development branch for the website, coming-soon
+page, viewer, composite ingest and team review. Use this checkout for ongoing
+work; historical branches and exported folders are not alternate baselines.
+See [local development](LOCAL_DEVELOPMENT.md) and the
+[consolidation record](docs/runbooks/repository-baseline.md).
 
 The website reads its catalog from Supabase, not `web/data/catalog.json`.
 Configure `web/.env.local` from `web/.env.example` and provision the approved
@@ -216,10 +220,14 @@ Keep the previous image and a root-only Compose/environment snapshot under
 `/srv/platelab-coolify/deploy-backups/` for rollback. Verify browse, imported
 details, media range requests, authentication and the new release's routes.
 
-The public coming-soon site is a separate application on
-`agent/studio-coming-soon`; a staging release does not update it. Coolify's
-configured source branch may differ from the manually deployed image, so inspect
-the running image revision before deploying or enabling automatic deployment.
+The public coming-soon site remains a separate deployment, but its source now
+lives on `main` too. Production hostnames render only the launch page and mailing
+list form, without a Supabase dependency. Localhost and staging render the full
+product. The last verified public image was built from the historical
+`agent/studio-coming-soon` branch; repository consolidation does not replace that
+running image. Both web applications now source `main` with automatic deployment
+disabled. Build future releases from a tested `main` commit and deploy explicitly. A staging release does
+not update the public deployment.
 
 [The July deployment notes](docs/2026-07-22-deploy-coolify.md) are historical;
 their statement that the public app tracks `main` no longer describes the

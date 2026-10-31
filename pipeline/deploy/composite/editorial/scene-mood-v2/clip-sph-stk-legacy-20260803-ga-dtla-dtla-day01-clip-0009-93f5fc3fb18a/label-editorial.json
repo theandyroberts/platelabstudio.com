@@ -1,0 +1,131 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "58cfe854121a0b9ce024c2f5b40a903be2ff5de40c6c7bfeae502266b10b9c41",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-d38e5f02daa397f6",
+      "expected": {
+        "label": "Palm-lined junction and freeway approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Palm-lined freeway junction"
+      }
+    },
+    {
+      "id": "label-f41f538886cbce64",
+      "expected": {
+        "label": "Layered concrete freeway underpasses",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Layered concrete underpasses"
+      }
+    },
+    {
+      "id": "label-b8fd9df1330efa4c",
+      "expected": {
+        "label": "Industrial yards and warehouse frontages",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial yards and warehouses"
+      }
+    },
+    {
+      "id": "label-4eb011b38d8547aa",
+      "expected": {
+        "label": "Ornamental concrete bridge and open industrial horizon",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Ornamental industrial bridge"
+      }
+    },
+    {
+      "id": "label-1c6ea14b80c9b387",
+      "expected": {
+        "label": "Blue-striped storage wall at the bridge exit",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Storage-warehouse frontage"
+      }
+    },
+    {
+      "id": "label-9d5c886a8b409ea1",
+      "expected": {
+        "label": "Contrasting brick factory frontages at the final junction",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brick factory crossroads"
+      }
+    },
+    {
+      "id": "label-9fd9de4e4e0581d2",
+      "expected": {
+        "label": "Twilight ambient light with mixed practical illumination",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-6dfd8e07870a315d",
+      "expected": {
+        "label": "Homeless encampment \u2014 tarp shelter beside the underpass approach",
+        "category": "entities"
+      },
+      "changes": {
+        "category": "scene"
+      }
+    },
+    {
+      "id": "label-12a0128d8f008d34",
+      "expected": {
+        "label": "Subdued industrial-city mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brooding isolation",
+        "detail": "Dark overhead concrete and isolated pools of light evoke an enclosed, solitary feeling.",
+        "category": "mood",
+        "start": 8,
+        "end": 20,
+        "evidenceIds": [
+          "view-8--45",
+          "source-12",
+          "frame-13",
+          "frame-16",
+          "frame-17",
+          "frame-18",
+          "frame-19",
+          "view-20--135"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Twilight release",
+      "detail": "The sky opens above the bridge after the heavy underpasses, creating a quieter sense of release.",
+      "category": "mood",
+      "start": 36,
+      "end": 56,
+      "evidenceIds": [
+        "source-36",
+        "view-40--45",
+        "frame-44",
+        "view-44-135",
+        "source-48",
+        "detail-53--135",
+        "view-56-135"
+      ],
+      "id": "mood-label-4eb011b38d8547aa",
+      "sourceLabelId": "label-4eb011b38d8547aa"
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "bb7b2f8730da90b82f8498e1a77dc6ed6bff9f45a03c66d4c40fd5f4ce98ab61",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-d16899795e96bf8a",
+      "expected": {
+        "label": "Opening caf\u00e9 corner and glass-tower junction",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Downtown caf\u00e9 corner"
+      }
+    },
+    {
+      "id": "label-bf11c7afab9ea8f1",
+      "expected": {
+        "label": "Clipped-tree office and parking-podium corridor",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Landscaped office district"
+      }
+    },
+    {
+      "id": "label-7a2b1bd7e02105c2",
+      "expected": {
+        "label": "Glazed construction podium and terraced retail block",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Construction site and terraced shops"
+      }
+    },
+    {
+      "id": "label-1fedfad56322862f",
+      "expected": {
+        "label": "Glass hotel opposite the banded clock corner",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Glass hotel and clock-tower corner"
+      }
+    },
+    {
+      "id": "label-845d7cc956568513",
+      "expected": {
+        "label": "White arcade and geometric parking frontage",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "White arcade and parking garage"
+      }
+    },
+    {
+      "id": "label-491710992bb8559f",
+      "expected": {
+        "label": "Brick institutional corner and bank-tower frontage",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brick civic-style building and bank tower"
+      }
+    },
+    {
+      "id": "label-4656d1d0d11c1d52",
+      "expected": {
+        "label": "Mirrored cylinders and concrete overhead structures",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Mirrored hotel and concrete underpass"
+      }
+    },
+    {
+      "id": "label-95e176546af15b08",
+      "expected": {
+        "label": "Palm-lined ending beside rounded commercial frontages",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Palm-lined commercial street"
+      }
+    },
+    {
+      "id": "label-aa5b82409e3cf531",
+      "expected": {
+        "label": "Dry-looking streets with warm upper-fa\u00e7ade light",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-d536faf83ee78865",
+      "expected": {
+        "label": "Businesslike corporate-district mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Composed confidence",
+        "detail": "Polished entrances and precisely clipped trees make the office corridor feel orderly and self-assured.",
+        "category": "mood",
+        "start": 8,
+        "end": 22,
+        "evidenceIds": [
+          "view-8--45",
+          "source-12",
+          "view-16-45",
+          "detail-22--135",
+          "detail-22-45"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Imposing scale",
+      "detail": "Mirrored cylinders and heavy overhead structures give the later passage an enveloping, monumental feeling.",
+      "category": "mood",
+      "start": 72,
+      "end": 96,
+      "evidenceIds": [
+        "view-72-45",
+        "frame-86",
+        "view-88-45",
+        "detail-94-135",
+        "source-96"
+      ],
+      "id": "mood-label-4656d1d0d11c1d52",
+      "sourceLabelId": "label-4656d1d0d11c1d52"
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "346e1de576e6cb56f5efe24156058b9ce9efbc522af2854a719210e747426a06",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-0400060f1606cd49",
+      "expected": {
+        "label": "High-rise junction and circular-window plaza podium",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Landscaped business-center plaza"
+      }
+    },
+    {
+      "id": "label-b11ed3ee2057db7e",
+      "expected": {
+        "label": "Older masonry-style downhill reverse views",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Older downtown masonry block"
+      }
+    },
+    {
+      "id": "label-b5149642a66ef29e",
+      "expected": {
+        "label": "Open-sided plaza underpass with warm light grid",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Open-sided plaza underpass"
+      }
+    },
+    {
+      "id": "label-c67a124ed7df22e8",
+      "expected": {
+        "label": "Tree-lined block of pale towers and concrete balconies",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined apartment and hotel block"
+      }
+    },
+    {
+      "id": "label-34aff76f43ced00c",
+      "expected": {
+        "label": "Red-brown podiums and white-framed tower",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Modern tower and terracotta podium"
+      }
+    },
+    {
+      "id": "label-4cf5b8a704b2214c",
+      "expected": {
+        "label": "White windowed span at the covered-street entrance",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Enclosed skybridge entrance"
+      }
+    },
+    {
+      "id": "label-24e6c48bafdd7957",
+      "expected": {
+        "label": "Dark lamp-lit service-street finish",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Dark covered service street"
+      }
+    },
+    {
+      "id": "label-740fafe2db0b68f5",
+      "expected": {
+        "label": "Low-angle daylight and deep structural shade",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-24d58e1c89a7fa65",
+      "expected": {
+        "label": "Corporate exterior shifting to enclosed urban mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Polished composure",
+        "detail": "Reflective towers and clipped landscaping make the opening feel formal and controlled.",
+        "category": "mood",
+        "start": 0,
+        "end": 6,
+        "evidenceIds": [
+          "frame-0",
+          "frame-1",
+          "detail-2--135",
+          "detail-2--45",
+          "view-4--45",
+          "frame-6"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Sunlit suspense",
+      "detail": "Low sunlight cuts beneath a dark ceiling and warm lamp grid, creating a charged contrast of brightness and shadow.",
+      "category": "mood",
+      "start": 7,
+      "end": 15,
+      "evidenceIds": [
+        "frame-7",
+        "view-8--45",
+        "view-8-45",
+        "frame-9",
+        "source-12",
+        "frame-15"
+      ],
+      "id": "mood-label-b5149642a66ef29e",
+      "sourceLabelId": "label-b5149642a66ef29e"
+    },
+    {
+      "label": "Claustrophobic tension",
+      "detail": "The narrow covered street, repeating piers and small distant opening create a compressed, uneasy finish.",
+      "category": "mood",
+      "start": 39,
+      "end": 40,
+      "evidenceIds": [
+        "frame-39",
+        "frame-40",
+        "view-40--45",
+        "view-40-45",
+        "view-40-135"
+      ],
+      "id": "mood-label-24e6c48bafdd7957",
+      "sourceLabelId": "label-24e6c48bafdd7957"
+    }
+  ]
+}

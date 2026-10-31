@@ -1,0 +1,100 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "cdc7cd3f2601266bcf903a4cf260dbc000e1921f32b71e8eeda293db771d4e46",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-fd63308565a40b75",
+      "expected": {
+        "label": "Landscaped industrial-edge bridge approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Landscaped industrial-edge approach"
+      }
+    },
+    {
+      "id": "label-a50c764c2d644d05",
+      "expected": {
+        "label": "Close repeating concrete arch spans",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Monumental concrete-arch bridge"
+      }
+    },
+    {
+      "id": "label-403f2922ee594dfa",
+      "expected": {
+        "label": "Bridge landing into industrial blocks",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial bridge landing"
+      }
+    },
+    {
+      "id": "label-99f5eaca8ded87e7",
+      "expected": {
+        "label": "Warehouse junction and street continuation",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse-district intersection"
+      }
+    },
+    {
+      "id": "label-e356dcc14ed647af",
+      "expected": {
+        "label": "Low warm daylight and dry-looking surfaces",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-8bf6a963fa519091",
+      "expected": {
+        "label": "Expansive bridge shifting to utilitarian industrial texture",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Open-road possibility",
+        "detail": "Broad sky, repeated arches and open-looking foreground lanes lend this section a feeling of space and possibility.",
+        "category": "mood",
+        "start": 8,
+        "end": 56,
+        "evidenceIds": [
+          "frame-8",
+          "source-12",
+          "frame-16",
+          "view-24--45",
+          "frame-40",
+          "source-48",
+          "frame-54",
+          "detail-56-135"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Workaday grit",
+      "detail": "Close traffic, warehouse walls and utility wires shift the ending toward a grounded industrial character.",
+      "category": "mood",
+      "start": 67,
+      "end": 78,
+      "evidenceIds": [
+        "frame-67",
+        "source-72",
+        "detail-75--45",
+        "detail-75-45",
+        "frame-76",
+        "frame-78"
+      ],
+      "id": "mood-label-99f5eaca8ded87e7",
+      "sourceLabelId": "label-99f5eaca8ded87e7"
+    }
+  ]
+}

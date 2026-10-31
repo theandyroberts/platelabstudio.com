@@ -1,0 +1,137 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "e886d803e0f2f12c0cfe93dd340108ecd7ebc68c07a265d59a33a0feda17428e",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-9167cd6d3f6ebf58",
+      "expected": {
+        "label": "Opening industrial approach and broad junction",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial crossroads"
+      }
+    },
+    {
+      "id": "label-fa3ca6df49bfaa3a",
+      "expected": {
+        "label": "Warehouse and older masonry corridor",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse district with homeless encampments"
+      }
+    },
+    {
+      "id": "label-120d3eade19a9106",
+      "expected": {
+        "label": "Fire escapes, painted walls and large blind fa\u00e7ades",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Weathered commercial block"
+      }
+    },
+    {
+      "id": "label-f785e054b96a1d76",
+      "expected": {
+        "label": "Transit-heavy traffic queue",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Bus-filled downtown intersection"
+      }
+    },
+    {
+      "id": "label-286b8ce96d3848cc",
+      "expected": {
+        "label": "Angular contemporary infill",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Modern infill among older storefronts"
+      }
+    },
+    {
+      "id": "label-34ef2e131d86b037",
+      "expected": {
+        "label": "Tree-lined hotel and institutional-looking blocks",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined hotel district"
+      }
+    },
+    {
+      "id": "label-6d12706c7dc0aeb1",
+      "expected": {
+        "label": "Shuttered retail rows and hotel-district approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Shuttered storefronts and older hotels"
+      }
+    },
+    {
+      "id": "label-6cc2b5c6d8ae766a",
+      "expected": {
+        "label": "Low warm sunlight and shaded, dry-looking streets",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-77f418b0bd3a68a0",
+      "expected": {
+        "label": "Homeless encampments \u2014 sidewalk tents, tarps and canopies",
+        "category": "entities"
+      },
+      "changes": {
+        "category": "scene"
+      }
+    },
+    {
+      "id": "label-c175d751d0cdd7c9",
+      "expected": {
+        "label": "Everyday documentary city character",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Gritty realism",
+        "detail": "Weathered warehouses, improvised shelters and everyday sidewalk activity support an immediate, unpolished documentary feeling.",
+        "category": "mood",
+        "start": 9,
+        "end": 24,
+        "evidenceIds": [
+          "frame-9",
+          "source-12",
+          "view-16-45",
+          "view-20-45",
+          "source-24"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Faded grandeur",
+      "detail": "Older hotel blocks and closed shutters beneath warm upper-story light evoke a worn, reflective urban atmosphere.",
+      "category": "mood",
+      "start": 92,
+      "end": 118,
+      "evidenceIds": [
+        "view-92-45",
+        "source-96",
+        "source-108",
+        "frame-109",
+        "detail-116--45",
+        "frame-118"
+      ],
+      "id": "mood-label-6d12706c7dc0aeb1",
+      "sourceLabelId": "label-6d12706c7dc0aeb1"
+    }
+  ]
+}

@@ -31,23 +31,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host"),
   );
   const isComingSoon = isComingSoonHostname(hostname);
+  const localComposite = process.env.PLATELAB_COMPOSITE_REVIEW === "1" && ["127.0.0.1", "localhost", "[::1]"].includes(hostname);
 
   return (
     <html lang="en" className={`${hanken.variable} ${plexMono.variable}`}>
       <body className={isComingSoon ? "coming-soon-host" : undefined}>
-        {!isComingSoon && <SiteHeader />}
+        {!isComingSoon && (localComposite ? <header className="site-header"><div className="wrap"><Logo href="/review" /><nav className="site-nav"><a href="/review" className="mono" style={{fontSize:11}}>LOCAL COLLECTION</a><span className="mono dimmer" style={{fontSize:10}}>COMPOSITE INGEST PILOT</span></nav></div></header> : <SiteHeader />)}
         {children}
         {!isComingSoon && (
           <footer className="site-footer">
             <div className="horizon" />
             <div className="wrap">
-              <Logo />
+              <Logo href={localComposite ? "/review" : "/"} />
               <div style={{ textAlign: "right" }}>
                 <p className="mono dimmer">
                   Captured on the Spheris array · Meridian Live Stitch
                 </p>
                 <p className="mono dimmer" style={{ marginTop: 6 }}>
-                  © 2026 The Plate Lab · All previews watermarked
+                  © 2026 The Plate Lab · {localComposite ? "Local composite review" : "All previews watermarked"}
                 </p>
               </div>
             </div>

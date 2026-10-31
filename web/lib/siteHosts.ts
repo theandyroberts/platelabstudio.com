@@ -5,13 +5,18 @@ export const STAGING_HOSTNAMES = new Set([
 ]);
 
 export const COMING_SOON_HOSTNAMES = new Set([
+  "platelabstudio.com",
+  "www.platelabstudio.com",
   "theplatelab.studio",
   "www.theplatelab.studio",
 ]);
 
 const LEGACY_WEB_HOST_REDIRECTS = new Map([
-  ["theplatelab.site", "theplatelab.studio"],
-  ["www.theplatelab.site", "theplatelab.studio"],
+  ["theplatelab.site", "platelabstudio.com"],
+  ["www.theplatelab.site", "platelabstudio.com"],
+  ["www.platelabstudio.com", "platelabstudio.com"],
+  ["theplatelab.studio", "platelabstudio.com"],
+  ["www.theplatelab.studio", "platelabstudio.com"],
   ["staging.theplatelab.site", "staging.platelabstudio.com"],
   ["staging.theplatelab.studio", "staging.platelabstudio.com"],
 ]);

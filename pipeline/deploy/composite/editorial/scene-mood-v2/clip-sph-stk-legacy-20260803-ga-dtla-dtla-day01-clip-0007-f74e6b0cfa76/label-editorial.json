@@ -1,0 +1,138 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "50188ab5497184bffe258f95d898e6dd4fa1f22f3cc576824e6466a838727024",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-e8d69667dd6a6a16",
+      "expected": {
+        "label": "Low-rise industrial street and service yards",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse service street"
+      }
+    },
+    {
+      "id": "label-378fe1d63fc67f49",
+      "expected": {
+        "label": "Balconied multistorey building at the opening",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Aging balcony apartment block"
+      }
+    },
+    {
+      "id": "label-ffe82e1ab2160f1a",
+      "expected": {
+        "label": "Brick commercial block with gridded windows",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brick commercial block"
+      }
+    },
+    {
+      "id": "label-f912cd67f5eaa916",
+      "expected": {
+        "label": "Signalized junction opening onto the viaduct",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial bridge junction"
+      }
+    },
+    {
+      "id": "label-73202a02884850ca",
+      "expected": {
+        "label": "Built-up bridge approach beside redevelopment",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Urban redevelopment corridor"
+      }
+    },
+    {
+      "id": "label-fcefe18f2aa46f8a",
+      "expected": {
+        "label": "Open ornamental concrete viaduct",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Ornamental concrete bridge"
+      }
+    },
+    {
+      "id": "label-43294d418f5b7077",
+      "expected": {
+        "label": "Industrial bridge landing and tree-lined factory street",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined factory street"
+      }
+    },
+    {
+      "id": "label-86d8429cb5b72767",
+      "expected": {
+        "label": "Cool twilight with warm practical lighting",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-add1e61d449895c1",
+      "expected": {
+        "label": "Homeless encampment \u2014 blue tarp and loaded cart",
+        "category": "entities"
+      },
+      "changes": {
+        "category": "scene"
+      }
+    },
+    {
+      "id": "label-bbf732d79c4fde9c",
+      "expected": {
+        "label": "Industrial-noir to monumental bridge mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial noir",
+        "detail": "Shadowed service yards, brickwork and isolated warm lamps give this opening an urban-noir feeling.",
+        "category": "mood",
+        "start": 0,
+        "end": 14,
+        "evidenceIds": [
+          "source-0",
+          "frame-3",
+          "view-4-135",
+          "detail-7-45",
+          "frame-14"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Twilight solitude",
+      "detail": "The open bridge, cool sky and long sightlines evoke an exposed, contemplative passage.",
+      "category": "mood",
+      "start": 43,
+      "end": 64,
+      "evidenceIds": [
+        "frame-43",
+        "source-48",
+        "frame-50",
+        "frame-55",
+        "view-56--45",
+        "source-60",
+        "view-64-135"
+      ],
+      "id": "mood-label-fcefe18f2aa46f8a",
+      "sourceLabelId": "label-fcefe18f2aa46f8a"
+    }
+  ]
+}

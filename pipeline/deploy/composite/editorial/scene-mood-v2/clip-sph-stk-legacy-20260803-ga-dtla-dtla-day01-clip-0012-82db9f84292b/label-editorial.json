@@ -1,0 +1,113 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "0ea0796193e6229a20dd6364412223bf0079e09bb4a35d8af5b4f9e03ae73dfb",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-6bff2ddbb8f572e2",
+      "expected": {
+        "label": "Signalized warehouse-district junction",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse-district intersection"
+      }
+    },
+    {
+      "id": "label-a163753611b60b63",
+      "expected": {
+        "label": "Elevated approach above industrial roofs",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Elevated industrial approach"
+      }
+    },
+    {
+      "id": "label-5f70166272131bdf",
+      "expected": {
+        "label": "Repeated concrete arches and diamond-pattern cables",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Sculptural concrete-arch bridge"
+      }
+    },
+    {
+      "id": "label-118a75074f92951e",
+      "expected": {
+        "label": "Tree-lined landing above a freeway",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined freeway crossing"
+      }
+    },
+    {
+      "id": "label-0899d1e0b7b82070",
+      "expected": {
+        "label": "Soft low-light appearance and warm horizon",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-1f3a23482af12489",
+      "expected": {
+        "label": "Mostly dry-looking road surfaces",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-e2db6b1c6d8ac5b9",
+      "expected": {
+        "label": "Industrial-to-monumental travel mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial melancholy",
+        "detail": "Compressed warehouse frontages and subdued light give the opening a reflective, workaday tone.",
+        "category": "mood",
+        "start": 0,
+        "end": 8,
+        "evidenceIds": [
+          "frame-0",
+          "frame-2",
+          "frame-4",
+          "view-8-135",
+          "detail-0--135",
+          "detail-0-45",
+          "detail-1--45"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Reflective escape",
+      "detail": "The repeated arch rhythm and expanded sky create a feeling of release from the tighter industrial blocks.",
+      "category": "mood",
+      "start": 18,
+      "end": 65,
+      "evidenceIds": [
+        "frame-18",
+        "frame-25",
+        "frame-35",
+        "source-24",
+        "source-36",
+        "view-40-45",
+        "view-48-135",
+        "frame-55",
+        "view-60-45",
+        "frame-65"
+      ],
+      "id": "mood-label-5f70166272131bdf",
+      "sourceLabelId": "label-5f70166272131bdf"
+    }
+  ]
+}

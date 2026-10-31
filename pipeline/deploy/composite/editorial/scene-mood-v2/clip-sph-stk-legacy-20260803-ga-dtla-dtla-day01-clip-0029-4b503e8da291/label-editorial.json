@@ -1,0 +1,147 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "7ce150ed6b449112cd31795058a0cd469b9af05ce602a266255b3ba801653cc7",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-e7db7268ed7c4de0",
+      "expected": {
+        "label": "Dim column-lined covered roadway",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Column-lined concrete underpass"
+      }
+    },
+    {
+      "id": "label-5ffeb0727c2c9ca3",
+      "expected": {
+        "label": "Daylight reveal at a stair-flanked intersection",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Downtown intersection with exterior stairs"
+      }
+    },
+    {
+      "id": "label-28cc7cca29959d08",
+      "expected": {
+        "label": "High-rise residential and office corridor",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "High-rise business and apartment district"
+      }
+    },
+    {
+      "id": "label-cc1d9fd2d3458320",
+      "expected": {
+        "label": "Stepped sculpture plaza beside a pedestrian crossing",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Corporate sculpture plaza"
+      }
+    },
+    {
+      "id": "label-6dbf12e8c4bcfcbf",
+      "expected": {
+        "label": "Open turn junction with a layered tower skyline",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Multilevel downtown crossroads"
+      }
+    },
+    {
+      "id": "label-d3dbd58cad88a5bc",
+      "expected": {
+        "label": "Sloping lower roadway with retaining walls and parked cars",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Sunken service road"
+      }
+    },
+    {
+      "id": "label-1de866647099fa02",
+      "expected": {
+        "label": "Shaded ending beneath layered urban connections",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Roadway beneath layered skybridges"
+      }
+    },
+    {
+      "id": "label-10bb64b86156a51f",
+      "expected": {
+        "label": "Dry-looking daylight with warm fa\u00e7ades and shaded pavement",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-e54f51281d7df9bf",
+      "expected": {
+        "label": "Subdued corporate setting transitioning into urban infrastructure",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brooding anticipation",
+        "detail": "Repeating columns, warm light pools and a bright distant outlet create a sense of waiting for the reveal.",
+        "category": "mood",
+        "start": 0,
+        "end": 5,
+        "evidenceIds": [
+          "source-0",
+          "view-0--45",
+          "frame-3",
+          "view-4--45",
+          "view-4-135",
+          "frame-5"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Cool restraint",
+      "detail": "Formal plaza steps, landscaping and monumental sculpture feel orderly and emotionally reserved.",
+      "category": "mood",
+      "start": 24,
+      "end": 44,
+      "evidenceIds": [
+        "view-24-45",
+        "source-24",
+        "view-28-135",
+        "frame-31",
+        "view-32-135",
+        "source-36",
+        "detail-38-135",
+        "view-44-135"
+      ],
+      "id": "mood-label-cc1d9fd2d3458320",
+      "sourceLabelId": "label-cc1d9fd2d3458320"
+    },
+    {
+      "label": "Gathering tension",
+      "detail": "Layered decks and deepening shade close around the final stretch, giving the passage a more compressed feeling.",
+      "category": "mood",
+      "start": 59,
+      "end": 62,
+      "evidenceIds": [
+        "frame-59",
+        "frame-60",
+        "source-60",
+        "view-60--45",
+        "frame-61",
+        "frame-62"
+      ],
+      "id": "mood-label-1de866647099fa02",
+      "sourceLabelId": "label-1de866647099fa02"
+    }
+  ]
+}

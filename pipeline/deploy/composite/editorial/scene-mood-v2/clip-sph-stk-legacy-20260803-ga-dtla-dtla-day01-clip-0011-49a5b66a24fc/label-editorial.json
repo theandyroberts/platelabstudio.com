@@ -1,0 +1,101 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "9df94f1584b9c215113d3d56d7574cc7c68a36626f5dd5e5238fd4efa266cf49",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-260d8097e70301be",
+      "expected": {
+        "label": "Tree-lined urban bridge approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined urban approach"
+      }
+    },
+    {
+      "id": "label-e171d70e43419bcd",
+      "expected": {
+        "label": "Repeating concrete network-arch crossing",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Monumental concrete-arch bridge"
+      }
+    },
+    {
+      "id": "label-5a833761323dceb2",
+      "expected": {
+        "label": "Western spans over the utility and industrial corridor",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial river and utility crossing"
+      }
+    },
+    {
+      "id": "label-017edb259deb3549",
+      "expected": {
+        "label": "Warehouse-lined landing and signalized endpoint",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse-district junction"
+      }
+    },
+    {
+      "id": "label-986621764d79d1d5",
+      "expected": {
+        "label": "Twilight exterior with dry-looking pavement",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-6cf6f5cfbe41a524",
+      "expected": {
+        "label": "Quiet, monumental metropolitan-travel mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Quiet awe",
+        "detail": "Monumental arches and broad twilight sky create a spacious, contemplative feeling.",
+        "category": "mood",
+        "start": 10,
+        "end": 73,
+        "evidenceIds": [
+          "frame-10",
+          "source-12",
+          "frame-17",
+          "source-24",
+          "source-36",
+          "frame-43",
+          "source-48",
+          "frame-58",
+          "detail-73--135"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Industrial melancholy",
+      "detail": "Warehouse frontages and the signalized landing bring the open crossing back to a subdued city rhythm.",
+      "category": "mood",
+      "start": 56,
+      "end": 73,
+      "evidenceIds": [
+        "view-56--45",
+        "frame-60",
+        "detail-68--45",
+        "detail-73--45",
+        "detail-73-45",
+        "frame-73"
+      ],
+      "id": "mood-label-017edb259deb3549",
+      "sourceLabelId": "label-017edb259deb3549"
+    }
+  ]
+}

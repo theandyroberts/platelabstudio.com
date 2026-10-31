@@ -21,11 +21,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308);
   }
 
-  if (
-    isComingSoonHostname(hostname) &&
-    request.nextUrl.pathname !== "/coming-soon"
-  ) {
-    return NextResponse.rewrite(new URL("/coming-soon", request.url));
+  if (isComingSoonHostname(hostname)) {
+    // The launch site stays independent of Supabase, including its direct URL.
+    return request.nextUrl.pathname === "/coming-soon"
+      ? NextResponse.next()
+      : NextResponse.rewrite(new URL("/coming-soon", request.url));
+  }
+
+  // The local composite review reads generated files and needs no catalog DB.
+  // Keep the exception restricted to loopback and these public review assets.
+  if (process.env.PLATELAB_COMPOSITE_REVIEW === "1" &&
+      ["127.0.0.1", "localhost", "[::1]"].includes(hostname) &&
+      ["/review", "/api/composite-review", "/api/composite-feedback", "/media/composite", "/stage"].some(prefix => request.nextUrl.pathname === prefix || request.nextUrl.pathname.startsWith(prefix + "/"))) {
+    return NextResponse.next();
   }
 
   return updateSession(request);

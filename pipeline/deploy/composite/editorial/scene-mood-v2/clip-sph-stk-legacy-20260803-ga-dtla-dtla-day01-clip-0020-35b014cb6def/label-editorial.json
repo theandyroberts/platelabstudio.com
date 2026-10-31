@@ -1,0 +1,119 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "bd030d08f79d0c5466ee2e14799db108b23ae4370c10a454cad7ca2ecc5614ad",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-727640c900e51e2d",
+      "expected": {
+        "label": "Gabled brick factories opposite freight-loading frontage",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brick factory and loading yard"
+      }
+    },
+    {
+      "id": "label-bdd64e05a5ad7d2e",
+      "expected": {
+        "label": "White fire-escape factory giving way to gray warehouses",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Fire-escape factory block"
+      }
+    },
+    {
+      "id": "label-f7a6af2785167d15",
+      "expected": {
+        "label": "Industrial junction at the bridge threshold",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Warehouse-district intersection"
+      }
+    },
+    {
+      "id": "label-9e0f009fadbe8e31",
+      "expected": {
+        "label": "Open elevated viaduct approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Open elevated bridge approach"
+      }
+    },
+    {
+      "id": "label-068c3f00ca397bfb",
+      "expected": {
+        "label": "Repeating open concrete-arch bridge environment",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Monumental concrete-arch bridge"
+      }
+    },
+    {
+      "id": "label-4023756af27f0f2d",
+      "expected": {
+        "label": "Tree-lined bridge landing and freeway-edge street approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined freeway crossing"
+      }
+    },
+    {
+      "id": "label-b69cf9c93cba0d54",
+      "expected": {
+        "label": "Soft warm-gray daylight and dry-looking surfaces",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-5de3c73dcb8792a9",
+      "expected": {
+        "label": "Subdued industrial setting becoming monumental",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial melancholy",
+        "detail": "Muted light and brick loading frontages suggest a subdued, reflective city passage.",
+        "category": "mood",
+        "start": 0,
+        "end": 8,
+        "evidenceIds": [
+          "source-0",
+          "frame-3",
+          "view-4--45",
+          "detail-8--135"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Expansive calm",
+      "detail": "Broad sky and repeated sculptural arches create a sense of space and unhurried scale.",
+      "category": "mood",
+      "start": 20,
+      "end": 91,
+      "evidenceIds": [
+        "view-20-45",
+        "frame-29",
+        "frame-36",
+        "frame-52",
+        "source-60",
+        "source-72",
+        "frame-78",
+        "detail-80-135",
+        "detail-91-135"
+      ],
+      "id": "mood-label-068c3f00ca397bfb",
+      "sourceLabelId": "label-068c3f00ca397bfb"
+    }
+  ]
+}

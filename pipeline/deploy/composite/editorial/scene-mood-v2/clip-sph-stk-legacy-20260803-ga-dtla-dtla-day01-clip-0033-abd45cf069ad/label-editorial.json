@@ -1,0 +1,98 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "d62cadf7bf58d4d598823fd08ef7506b1c8b54f59cb1951ef58a98ca6489cd5d",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-bc7c3c7e7464cec9",
+      "expected": {
+        "label": "Opening billboard-lined downtown intersection",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Billboard-lined downtown crossroads"
+      }
+    },
+    {
+      "id": "label-8f447c519f7bbe61",
+      "expected": {
+        "label": "Tree-shaded mixed-era mid-block",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-shaded city block"
+      }
+    },
+    {
+      "id": "label-370c5fbbc1c51fc1",
+      "expected": {
+        "label": "Cream arched fa\u00e7ade beneath modern towers",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Historic arched commercial frontage"
+      }
+    },
+    {
+      "id": "label-c6df3a85dbd9b17c",
+      "expected": {
+        "label": "Glass frontage, open parking and layered office skyline",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Gleaming office towers and corner caf\u00e9"
+      }
+    },
+    {
+      "id": "label-6abc23bc3aa14549",
+      "expected": {
+        "label": "Warm upper-building light over shaded dry streets",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-5e5e0a0fc7aaf39a",
+      "expected": {
+        "label": "Traffic-led commercial downtown mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Big-city bustle",
+        "detail": "Oversized advertising and close buses and cars give the opening an energetic commercial-city feeling.",
+        "category": "mood",
+        "start": 0,
+        "end": 8,
+        "evidenceIds": [
+          "frame-0",
+          "frame-7",
+          "detail-0--135",
+          "detail-0--45",
+          "detail-0-135",
+          "view-8-45"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Shaded nostalgia",
+      "detail": "Older arches, awnings and dense tree shade soften the middle section into a more reflective urban mood.",
+      "category": "mood",
+      "start": 9,
+      "end": 19,
+      "evidenceIds": [
+        "frame-9",
+        "detail-11--135",
+        "detail-11--45",
+        "source-12",
+        "frame-15",
+        "frame-19"
+      ],
+      "id": "mood-label-8f447c519f7bbe61",
+      "sourceLabelId": "label-8f447c519f7bbe61"
+    }
+  ]
+}

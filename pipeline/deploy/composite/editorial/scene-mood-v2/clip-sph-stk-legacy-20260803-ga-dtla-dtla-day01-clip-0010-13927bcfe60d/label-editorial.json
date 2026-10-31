@@ -1,0 +1,120 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "83dc9fb2b01ca3d2850274a8fd8101d9119769c33b0ed541dc7ddc7a53333055",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-7c1b0ba4eb8f4900",
+      "expected": {
+        "label": "Brick-and-metal warehouse approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brick-and-metal warehouse district"
+      }
+    },
+    {
+      "id": "label-ecb221ea72b038ea",
+      "expected": {
+        "label": "Signalized industrial junction",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Industrial crossroads"
+      }
+    },
+    {
+      "id": "label-1d3081a8d9836052",
+      "expected": {
+        "label": "Raised western bridge approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Elevated urban bridge approach"
+      }
+    },
+    {
+      "id": "label-f82ec290ad06e803",
+      "expected": {
+        "label": "Repeating sculptural concrete arches",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Sculptural concrete-arch bridge"
+      }
+    },
+    {
+      "id": "label-54d6923783f2e2ee",
+      "expected": {
+        "label": "Tree-lined eastern landing",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Tree-lined bridge landing"
+      }
+    },
+    {
+      "id": "label-477d825ae55dc097",
+      "expected": {
+        "label": "Twilight with a warm horizon and practical lights",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-72c6df4e8d48e24b",
+      "expected": {
+        "label": "Dry-looking deck and distant visibility",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-6f3ca7bd75d72786",
+      "expected": {
+        "label": "Industrial-to-monumental visual mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Twilight noir",
+        "detail": "Dark warehouse edges and warm practical lights suggest a quiet, cinematic urban-noir atmosphere.",
+        "category": "mood",
+        "start": 0,
+        "end": 12,
+        "evidenceIds": [
+          "source-0",
+          "view-0-135",
+          "detail-1--135",
+          "detail-1-135",
+          "view-4-135",
+          "view-12-135"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Liminal calm",
+      "detail": "Rhythmic arches beneath the twilight sky give the crossing a suspended, between-places feeling.",
+      "category": "mood",
+      "start": 23,
+      "end": 80,
+      "evidenceIds": [
+        "frame-23",
+        "frame-39",
+        "view-44-45",
+        "source-48",
+        "detail-62-45",
+        "frame-68",
+        "frame-70",
+        "detail-80--135"
+      ],
+      "id": "mood-label-f82ec290ad06e803",
+      "sourceLabelId": "label-f82ec290ad06e803"
+    }
+  ]
+}

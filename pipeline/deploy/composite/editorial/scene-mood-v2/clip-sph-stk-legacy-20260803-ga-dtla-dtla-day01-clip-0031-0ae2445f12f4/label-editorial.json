@@ -1,0 +1,168 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "273403503170c83bc88ed5cf6501712fecc5b708eaf32be3a477bbad7b9305d4",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-efd1369679d0ff37",
+      "expected": {
+        "label": "Parking structures and concrete-deck approach",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Parking garage approach"
+      }
+    },
+    {
+      "id": "label-615ccf440d30355f",
+      "expected": {
+        "label": "Deep-shadow passage beneath layered decks",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Concrete underpass"
+      }
+    },
+    {
+      "id": "label-d5670e203454eea4",
+      "expected": {
+        "label": "Mirrored cylindrical hotel and monumental concrete podium",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Mirrored high-rise hotel"
+      }
+    },
+    {
+      "id": "label-fa380f74542dec1f",
+      "expected": {
+        "label": "Garden, older masonry and financial-district plazas",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Landscaped financial-district plaza"
+      }
+    },
+    {
+      "id": "label-cf5098e706280acf",
+      "expected": {
+        "label": "Office canyon of masonry, fins and reflective glass",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Gleaming business center"
+      }
+    },
+    {
+      "id": "label-4b4028d8a0ccc57a",
+      "expected": {
+        "label": "Historic retail blocks and truck-lined frontage",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Historic shopping street"
+      }
+    },
+    {
+      "id": "label-c8180baf83ec85f0",
+      "expected": {
+        "label": "Mixed hotel, apartment and parking blocks",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Hotel and apartment district"
+      }
+    },
+    {
+      "id": "label-109b35f13e54e031",
+      "expected": {
+        "label": "Contemporary apartment and glass-balcony streetscape",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Modern apartment block"
+      }
+    },
+    {
+      "id": "label-03ca23776f804e3f",
+      "expected": {
+        "label": "Broad late junction and lower-rise gaps",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Broad downtown crossroads"
+      }
+    },
+    {
+      "id": "label-b149ab2da826f42f",
+      "expected": {
+        "label": "Dry-looking street with warm upper-fa\u00e7ade light",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-22c5ff21c4c53334",
+      "expected": {
+        "label": "Imposing corporate-district mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brooding enclosure",
+        "detail": "Deep deck shadows and oversized concrete supports compress the space into a brooding passage.",
+        "category": "mood",
+        "start": 6,
+        "end": 13,
+        "evidenceIds": [
+          "frame-6",
+          "frame-8",
+          "frame-9",
+          "source-12",
+          "frame-13"
+        ]
+      }
+    },
+    {
+      "id": "label-dd9a33210b410564",
+      "expected": {
+        "label": "Comparatively quiet later-block mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Cool authority",
+        "detail": "Reflective towers, formal entrances and monumental street walls suggest confidence, order and corporate power.",
+        "category": "mood",
+        "start": 44,
+        "end": 70,
+        "evidenceIds": [
+          "frame-44",
+          "source-48",
+          "source-60",
+          "view-68--45",
+          "frame-70"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Urban breathing room",
+      "detail": "Longer views and smaller groups of pedestrians give the later apartment blocks a calmer, more open feeling.",
+      "category": "mood",
+      "start": 100,
+      "end": 129,
+      "evidenceIds": [
+        "view-100--45",
+        "source-108",
+        "view-112-135",
+        "view-116--135",
+        "view-128--45",
+        "detail-129--135"
+      ],
+      "id": "mood-label-109b35f13e54e031",
+      "sourceLabelId": "label-109b35f13e54e031"
+    }
+  ]
+}

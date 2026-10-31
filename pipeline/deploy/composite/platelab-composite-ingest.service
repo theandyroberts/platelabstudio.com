@@ -1,0 +1,29 @@
+[Unit]
+Description=The Plate Lab composite ingest pickup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/platelab-composite-ingest/current
+EnvironmentFile=/home/ubuntu/platelab-composite-ingest/.env
+ExecStart=/usr/bin/flock -n /home/ubuntu/platelab-composite-ingest/data/worker.lock /usr/bin/node pipeline/src/composite/worker.mjs
+Restart=on-failure
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=30
+UMask=0022
+Nice=10
+CPUQuota=200%
+MemoryMax=3G
+TasksMax=128
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/ubuntu/platelab-composite-ingest/data
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

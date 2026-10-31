@@ -1,0 +1,118 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "56bf1b3261358f38877e12021cfcded73d407c8bb5975380c76a4abd27e7db40",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-160aa60898a28522",
+      "expected": {
+        "label": "Older brick corner in a low-rise urban streetscape",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Old brick neighborhood corner"
+      }
+    },
+    {
+      "id": "label-753137a8806dcc22",
+      "expected": {
+        "label": "Charcoal-clad block with illuminated glazing",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Contemporary commercial block"
+      }
+    },
+    {
+      "id": "label-5f77e2d16c23b8ba",
+      "expected": {
+        "label": "Bungalow and shaped-parapet storefronts",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Bungalow and neighborhood storefronts"
+      }
+    },
+    {
+      "id": "label-2cc84a7fd2b597b7",
+      "expected": {
+        "label": "Recreation grounds and curved-roof institutional frontage",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Neighborhood recreation grounds"
+      }
+    },
+    {
+      "id": "label-82d1e180ca63e8c5",
+      "expected": {
+        "label": "Loading-frontage and glazed-brick industrial block",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Brick factory and loading yard"
+      }
+    },
+    {
+      "id": "label-4344c25f6a6710b1",
+      "expected": {
+        "label": "Ornamental concrete bridge above industrial rooflines",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Ornamental industrial bridge"
+      }
+    },
+    {
+      "id": "label-e868ef05c485a755",
+      "expected": {
+        "label": "Diffuse warm-horizon light and dry-looking pavement",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-1429638b69ef37b3",
+      "expected": {
+        "label": "Subdued working-city travel mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Everyday nostalgia",
+        "detail": "Older brickwork, small storefronts and soft horizon light give the opening a familiar, reflective city feeling.",
+        "category": "mood",
+        "start": 0,
+        "end": 4,
+        "evidenceIds": [
+          "source-0",
+          "frame-1",
+          "view-0--45",
+          "view-4--135"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Wistful passage",
+      "detail": "Worn bridge surfaces and an open horizon suggest a subdued, contemplative journey.",
+      "category": "mood",
+      "start": 24,
+      "end": 68,
+      "evidenceIds": [
+        "source-24",
+        "detail-28-45",
+        "frame-34",
+        "source-36",
+        "source-48",
+        "source-60",
+        "view-68--45",
+        "view-68-45"
+      ],
+      "id": "mood-label-4344c25f6a6710b1",
+      "sourceLabelId": "label-4344c25f6a6710b1"
+    }
+  ]
+}

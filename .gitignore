@@ -24,3 +24,17 @@ web/data/stitch-reports/
 # Stage viewer (viewer/) — only its install deps stay out of git; the models
 # (incl. the 48MB bmw_m5.glb) are committed so the demo is self-contained.
 viewer/node_modules/
+sample-data/composite/
+
+# Generated public team review bundle
+/team-review/dist/
+
+/team-review/.feedback.env
+/team-review/feedback-data/
+
+# Local development state and generated Python bytecode
+/.local-dev/
+__pycache__/
+*.py[cod]
+.env.*
+!.env.example

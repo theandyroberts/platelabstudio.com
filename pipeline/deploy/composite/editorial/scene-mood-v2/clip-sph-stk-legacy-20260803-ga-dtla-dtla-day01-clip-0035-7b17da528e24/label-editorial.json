@@ -1,0 +1,110 @@
+{
+  "schema": "tpl.label-editorial.v1",
+  "sourceFingerprint": "75421fb2a1fc8c4dbf7a39f7eb3fc07d63d09f54513d90bd70a6fef4f7e9aab7",
+  "reviewedAt": "2026-10-07",
+  "patches": [
+    {
+      "id": "label-7a7819fe1da852a2",
+      "expected": {
+        "label": "Landscaped high-rise intersection",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Landscaped high-rise crossroads"
+      }
+    },
+    {
+      "id": "label-5d69a6f0be44301b",
+      "expected": {
+        "label": "Rectangular portal and colored-lit entrance chamber",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Colored-lit tunnel entrance"
+      }
+    },
+    {
+      "id": "label-5f346cc817c56b85",
+      "expected": {
+        "label": "Dim pale-tiled arched tunnel",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Graffiti-lined tiled tunnel"
+      }
+    },
+    {
+      "id": "label-c0cb42e20de00f38",
+      "expected": {
+        "label": "Shaded daylight exterior with warm fa\u00e7ade highlights",
+        "category": "scene"
+      },
+      "changes": {
+        "category": "production"
+      }
+    },
+    {
+      "id": "label-ab859f4c558339f0",
+      "expected": {
+        "label": "Formal exterior to gritty enclosed-passage mood",
+        "category": "scene"
+      },
+      "changes": {
+        "label": "Urban composure",
+        "detail": "Formal landscaping and large city frontages give the opening a composed, everyday metropolitan feeling.",
+        "category": "mood",
+        "start": 0,
+        "end": 5,
+        "evidenceIds": [
+          "frame-1",
+          "frame-5",
+          "view-0--135",
+          "view-0-45",
+          "detail-0--45",
+          "detail-2-135",
+          "detail-4--135",
+          "detail-5-45"
+        ]
+      }
+    }
+  ],
+  "moods": [
+    {
+      "label": "Electric suspense",
+      "detail": "Green, amber and red lighting draws the view into an increasingly enclosed entrance.",
+      "category": "mood",
+      "start": 0,
+      "end": 11,
+      "evidenceIds": [
+        "view-0--45",
+        "detail-4--45",
+        "frame-5",
+        "detail-5-45",
+        "frame-6",
+        "frame-8",
+        "view-8-45",
+        "frame-11"
+      ],
+      "id": "mood-label-5d69a6f0be44301b",
+      "sourceLabelId": "label-5d69a6f0be44301b"
+    },
+    {
+      "label": "Mounting dread",
+      "detail": "Daylight recedes behind stained tile and repeating lamps, giving the dark tunnel a foreboding, enclosed feeling.",
+      "category": "mood",
+      "start": 12,
+      "end": 18,
+      "evidenceIds": [
+        "frame-12",
+        "source-12",
+        "view-12--135",
+        "view-12-45",
+        "view-16-45",
+        "view-16-135",
+        "frame-18"
+      ],
+      "id": "mood-label-5f346cc817c56b85",
+      "sourceLabelId": "label-5f346cc817c56b85"
+    }
+  ]
+}

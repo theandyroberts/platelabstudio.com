@@ -17,6 +17,12 @@
     "@supabase/supabase-js": "2.111.0"
   },
   "scripts": {
+    "composite:run": "node --env-file-if-exists=.env pipeline/src/composite/run.mjs",
+    "composite:prepare": "node --env-file-if-exists=.env pipeline/src/composite/cli.mjs prepare",
+    "composite:enrich": "node --env-file-if-exists=.env pipeline/src/composite/cli.mjs enrich",
+    "composite:publish": "node --env-file-if-exists=.env pipeline/src/composite/cli.mjs publish",
+    "composite:test": "node --test pipeline/test/composite*.test.mjs && npm test --prefix viewer",
+    "composite:dev": "PLATELAB_COMPOSITE_REVIEW=1 node --env-file-if-exists=.env node_modules/next/dist/bin/next dev web --hostname 127.0.0.1 --port 3100",
     "demo:generate": "npm run generate -w pipeline",
     "ingest:preflight": "npm run preflight -w pipeline --",
     "ingest:preflight:all": "npm run preflight:all -w pipeline --",
@@ -40,6 +46,7 @@
     "stage:previews:build": "bash pipeline/stitch/build-stage-previews.sh",
     "stage:previews:check": "node scripts/check-stage-previews.mjs",
     "staging:smoke:email": "node scripts/staging-auth-email-smoke.mjs",
-    "test": "npm test -w pipeline"
+    "test": "npm test -w pipeline",
+    "composite:retag": "node pipeline/src/composite/cli.mjs retag"
   }
 }

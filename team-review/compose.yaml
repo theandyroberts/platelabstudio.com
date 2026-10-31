@@ -1,0 +1,65 @@
+services:
+  review:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    container_name: platelab-composite-review
+    depends_on:
+      feedback:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    volumes:
+      - ./current:/usr/share/nginx/html/composite-review:ro
+      - /home/ubuntu/platelab-composite-ingest/data/public:/ingested:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    networks:
+      - coolify
+      - feedback
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: coolify
+      traefik.http.routers.tpl-composite-review.rule: '(Host(`platelabstudio.com`) || Host(`www.platelabstudio.com`)) && (Path(`/composite-review`) || PathPrefix(`/composite-review/`))'
+      traefik.http.routers.tpl-composite-review.entrypoints: https
+      traefik.http.routers.tpl-composite-review.priority: "100"
+      traefik.http.routers.tpl-composite-review.tls: "true"
+      traefik.http.routers.tpl-composite-review.tls.certresolver: letsencrypt
+      traefik.http.routers.tpl-composite-review.service: tpl-composite-review
+      traefik.http.services.tpl-composite-review.loadbalancer.server.port: "80"
+      traefik.http.routers.tpl-legacy-web.rule: 'Host(`theplatelab.studio`) || Host(`www.theplatelab.studio`) || Host(`theplatelab.site`) || Host(`www.theplatelab.site`)'
+      traefik.http.routers.tpl-legacy-web.entrypoints: https
+      traefik.http.routers.tpl-legacy-web.priority: "200"
+      traefik.http.routers.tpl-legacy-web.tls: "true"
+      traefik.http.routers.tpl-legacy-web.tls.certresolver: letsencrypt
+      traefik.http.routers.tpl-legacy-web.service: tpl-composite-review
+  feedback:
+    build: ./feedback
+    container_name: platelab-composite-feedback
+    restart: unless-stopped
+    read_only: true
+    user: "1000:1000"
+    env_file: .feedback.env
+    environment:
+      CATALOG_ROOT: /catalog
+    volumes:
+      - ./feedback-data:/data
+      - /home/ubuntu/platelab-composite-ingest/data/public:/catalog:ro
+    networks:
+      - feedback
+    labels:
+      traefik.enable: "false"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+networks:
+  coolify:
+    external: true
+  feedback: {}
