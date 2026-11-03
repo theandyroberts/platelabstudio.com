@@ -4,17 +4,24 @@ import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js'
 
 // The same Ferrari geometry and orientation used by the Lab, drawn as a
 // restrained technical miniature. This renderer has no independent clock.
-export function createAttitudeFerrari(canvas,stageBase){
+export function createAttitudeFerrari(canvas,stageBase,{northUp=false}={}){
   const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true})
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2))
   renderer.setSize(220,190,false)
   const scene=new THREE.Scene(),vehicle=new THREE.Group()
   scene.add(vehicle)
   const camera=new THREE.OrthographicCamera(-2.82,2.82,2.44,-2.44,.1,30)
-  camera.position.set(-5.72,4.47,6.87);camera.lookAt(0,0,0)
+  camera.position.set(northUp?0:-5.72,4.47,northUp?8.94:6.87);camera.lookAt(0,0,0)
   scene.add(new THREE.HemisphereLight(0xe0e2d1,0x0b100c,2))
   const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(-4,6,3);scene.add(light)
   let disposed=false
+  // Match the larger telemetry panel as well as the compact overlay.
+  const resizeObserver=new ResizeObserver(()=>{
+    if(disposed||!canvas.clientWidth||!canvas.clientHeight)return
+    renderer.setSize(canvas.clientWidth,canvas.clientHeight,false)
+    renderer.render(scene,camera)
+  })
+  resizeObserver.observe(canvas)
   const geometries=new Set(),materials=new Set(),textures=new Set()
   const draco=new DRACOLoader().setDecoderPath(`${stageBase}/draco/gltf/`)
   const loader=new GLTFLoader().setDRACOLoader(draco)
@@ -43,5 +50,5 @@ export function createAttitudeFerrari(canvas,stageBase){
     if(disposed){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());return}
     vehicle.add(car);renderer.render(scene,camera)
   }).finally(()=>draco.dispose())
-  return {ready,setPose(q){if(disposed)return;vehicle.quaternion.fromArray(q);renderer.render(scene,camera)},dispose(){disposed=true;draco.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer.dispose()}}
+  return {ready,setPose(q){if(disposed)return;vehicle.quaternion.fromArray(q);renderer.render(scene,camera)},dispose(){disposed=true;resizeObserver.disconnect();draco.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer.dispose()}}
 }

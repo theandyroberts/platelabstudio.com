@@ -1,3 +1,4 @@
+import { stitchStatus } from "@platelab/shared";
 import type { Metadata } from "next";
 import { getPlate } from "@/lib/catalog";
 import { siteTitle } from "@/lib/siteTitle";
@@ -58,6 +59,7 @@ export default async function StageViewerPage({
     if (query[name]) viewerQuery.set(name, query[name]);
   }
   const plate = query.sku ? await getPlate(query.sku) : undefined;
+  viewerQuery.set("stitchStatus", stitchStatus(plate?.stitchStatus));
   if (plate?.composite) viewerQuery.set("coverageBottom", String(plate.composite.coverageBottom));
   const viewerBase = plate?.composite ? "/imported-stage" : "/stage";
   const viewerSrc = `${viewerBase}/index.html${viewerQuery.size ? `?${viewerQuery}` : ""}`;

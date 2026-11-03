@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRef } from "react";
 import type { Plate } from "@platelab/shared";
-import { formatUsd } from "@platelab/shared";
+import { stitchStatus, formatUsd } from "@platelab/shared";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
+import { StitchStatus } from "./StitchStatus";
 import { buildStudioHref } from "@/lib/studioHref";
 
 function formatDuration(sec: number): string {
@@ -50,6 +51,7 @@ export function PlateCard({
 
   return (
     <article
+      data-stitch-status={stitchStatus(plate.stitchStatus)}
       className={`plate-card${plate.composite ? " plate-card-composite" : ""}`}
       onMouseEnter={start}
       onMouseLeave={stop}
@@ -57,7 +59,7 @@ export function PlateCard({
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) stop(); }}
     >
       <Link href={detailHref} className="plate-card-preview" aria-label={`Preview ${plate.title}`}>
-        <div className="frame">
+        <div className="frame stitch-surface">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={publicMediaUrl(plate.renditions.poster)}
@@ -74,6 +76,7 @@ export function PlateCard({
           />
           <span className="sku-chip mono">{plate.sku}</span>
           <span className="dur-chip mono">{formatDuration(plate.media.durationSec)}</span>
+          <StitchStatus status={plate.stitchStatus} />
         </div>
       </Link>
       <div className="body">

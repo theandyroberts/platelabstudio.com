@@ -14,11 +14,14 @@ export const dynamic = "force-dynamic";
 
 export default async function SceneClipWorkspacePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string; sceneId: string }>;
+  searchParams: Promise<{tab?:string}>;
 }) {
   const { projectId, sceneId } = await params;
-  const path = `/projects/${projectId}/scenes/${sceneId}/clips`;
+  const {tab}=await searchParams;
+  const path = `/projects/${projectId}/scenes/${sceneId}/clips${tab==="order"?"?tab=order":""}`;
   const supabase = await createClient();
   const {
     data: { user },
@@ -117,7 +120,7 @@ export default async function SceneClipWorkspacePage({
           the scene and try again.
         </p>
       ) : (
-        <SceneClipWorkspace initialCandidates={candidates} />
+        <SceneClipWorkspace initialCandidates={candidates} initialTab={tab==="order"?"selected":"considering"} />
       )}
     </main>
   );

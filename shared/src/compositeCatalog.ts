@@ -14,6 +14,7 @@ export function plateForComposite(clip: any, sku: string, release: string, appro
   const month = Number(clip.summary.captureDate.slice(5,7));
   const season = [12,1,2].includes(month) ? 'winter' : [3,4,5].includes(month) ? 'spring' : [6,7,8].includes(month) ? 'summer' : 'fall';
   return plateSchema.parse({
+    stitchStatus: 'rough',
     sku, title: clip.title, description: clip.description, shootDate: clip.summary.captureDate,
     rig: 'Spheris XL · imported composite',
     media: {durationSec: clip.media.duration, fps: clip.media.fps, stitchedResolution: `${clip.media.width}x${clip.media.height}`, colorPipeline: `${clip.media.color.primaries}; transfer ${clip.media.color.transfer}`, masterFormat: `Imported ${clip.media.codec} composite; finishing scope to confirm`, cameraOriginals: 'Not included in imported package', timecode: clip.sourceTimecode},

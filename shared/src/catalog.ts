@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidSku } from "./sku";
+import { STITCH_STATUSES } from "./stitchStatus";
 
 /**
  * The Plate Lab catalog schema.
@@ -123,6 +124,8 @@ export const renditionsSchema = z.object({
 });
 
 export const plateSchema = z.object({
+  /** Missing status on existing catalog entries means rough stitch, never production-ready. */
+  stitchStatus: z.enum(STITCH_STATUSES).optional(),
   sku: z.string().refine(isValidSku, "invalid SKU (format or check digit)"),
   title: z.string().min(1),
   description: z.string().min(1),

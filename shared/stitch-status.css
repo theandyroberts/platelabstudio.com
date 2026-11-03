@@ -1,0 +1,32 @@
+/* Shared by the website and standalone Lab so quality colors never drift. */
+[data-stitch-status] { --stitch-color: #f1cd4f; }
+[data-stitch-status="production-ready"] { --stitch-color: #62d68b; }
+.plate-card.stitch-surface { border-color: var(--stitch-color); }
+:where(.stitch-surface) { position: relative; }
+.stitch-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  border: 2px solid var(--stitch-color);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.stitch-status-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: #11130f;
+  color: var(--stitch-color);
+  font: 500 11px/1.3 ui-monospace, monospace;
+  letter-spacing: .03em;
+}
+.stitch-status-label::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.stitch-viewer-label { position: absolute; top: 12px; left: 12px; z-index: 5; }

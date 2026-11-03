@@ -1003,3 +1003,7 @@ input[type="checkbox"] {
 .composite-preview .workbench{grid-template-columns:minmax(0,1fr) 260px}
 .composite-preview .workbench.is-collapsed{grid-template-columns:minmax(0,1fr) 0}
 @media(max-width:700px){.composite-preview .control-panel{width:220px}.composite-preview .workbench{grid-template-columns:minmax(0,1fr) 220px}.composite-preview .view-group>span{display:none}}
+
+/* Keep the status above the stage while leaving the normal header unobscured. */
+.viewport > .stitch-viewer-label { top: auto; bottom: 12px; }
+.composite-preview .viewport > .stitch-viewer-label { top: 12px; bottom: auto; }

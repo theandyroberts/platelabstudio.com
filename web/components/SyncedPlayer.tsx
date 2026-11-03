@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Plate } from "@platelab/shared";
-import { GRID_ORDER, CAMERA_POSITIONS } from "@platelab/shared";
+import { stitchStatus, GRID_ORDER, CAMERA_POSITIONS } from "@platelab/shared";
+import { StitchStatus } from "./StitchStatus";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
 
 /**
@@ -83,7 +84,8 @@ export function SyncedPlayer({ plate, stageHref }: { plate: Plate; stageHref?: s
   };
 
   return (
-    <div className="player-shell">
+    <div className="player-shell stitch-surface" data-stitch-status={stitchStatus(plate.stitchStatus)}>
+      <StitchStatus status={plate.stitchStatus} overlay/>
       <div className="stitched">
         <video
           ref={masterRef}

@@ -3,13 +3,9 @@
 import { useState } from "react";
 import type { Plate } from "@platelab/shared";
 import { formatUsd } from "@platelab/shared";
-import Link from "next/link";
-import { safeBrowseReturnPath } from "@/lib/browseSearch";
+import {PlateActions} from "./PlateActions";
 
 export function PriceBlock({ plate, browseReturnPath }: { plate: Plate; browseReturnPath?: string }) {
-  const saveParams = new URLSearchParams(safeBrowseReturnPath(browseReturnPath).split("?")[1]);
-  saveParams.set("save", plate.sku);
-  saveParams.set("saved", "1");
   const [state, setState] = useState<"idle" | "busy" | "reserved" | "error">(
     plate.availability === "reserved" ? "reserved" : "idle",
   );
@@ -60,7 +56,7 @@ export function PriceBlock({ plate, browseReturnPath }: { plate: Plate; browseRe
         </div>
       </div>
       <div className="cta-stack">
-        <Link className="btn primary" href={`/browse?${saveParams}`}>Save to scene</Link>
+        <PlateActions sku={plate.sku} resumeAction={false}/>
         <button
           className="btn primary"
           onClick={reserve}
@@ -72,9 +68,7 @@ export function PriceBlock({ plate, browseReturnPath }: { plate: Plate; browseRe
               ? "Reserving…"
               : "Reserve · 72h hold"}
         </button>
-        <a className="btn" href={`mailto:plates@theplatelab.com?subject=Quote request for ${plate.sku}`}>
-          Request a quote
-        </a>
+
       </div>
       {state === "error" && (
         <p className="mono" style={{ color: "#c56b3e", marginTop: 12 }}>
@@ -82,11 +76,11 @@ export function PriceBlock({ plate, browseReturnPath }: { plate: Plate; browseRe
         </p>
       )}
       <p className="custom-note">
-        Running an LED volume?{" "}
+        Each plate is delivered{" "}
         <a href={`mailto:plates@theplatelab.com?subject=Custom delivery ${plate.sku}`}>
-          Custom built for your volumetric stage
+          custom built for your target stage
         </a>{" "}
-        — re-projected, re-graded, and tiled to your wall geometry.
+        — re-projected, re-graded, and tiled to your stage geometry.
       </p>
     </div>
   );

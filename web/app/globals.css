@@ -182,6 +182,7 @@ body::before {
 }
 
 .wrap { max-width: var(--max); margin: 0 auto; padding: 0 32px; }
+.wrap.browse-page { max-width: none; width: 100%; padding: 0; container-type: inline-size; }
 
 /* mono utility — spaced uppercase labels, the brand's data voice */
 .mono {
@@ -1905,20 +1906,21 @@ body::before {
 }
 .plate-card:hover { border-color: #e6a178; }
 .plate-card-preview { display: block; grid-area: preview; min-width: 0; align-self: start; }
-.plate-card .frame { position: relative; aspect-ratio: 20 / 10; overflow: hidden; background: var(--ink-3); }
+.plate-card .frame { position: relative; aspect-ratio: 24 / 10; overflow: hidden; background: var(--ink-3); }
 .plate-card .frame img, .plate-card .frame video {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top;
 }
 /* Posters contain the upper 4096x1152 strip (32:9). Crop that strip to its
-   centered 2304x1152 forward view (20:10). For the full 4096x2048 movie,
+   centered 2764.8x1152 forward view (24:10). For the full 4096x2048 movie,
    use the same scale and horizontal center, clipping the unused lower area.
    Both axes retain the source proportions; no stretching. */
 .plate-card-composite .frame video {
-  inset: 0 auto auto 50%; width: 177.777778%; height: auto;
+  inset: 0 auto auto 50%; width: 148.148148%; height: auto;
   aspect-ratio: 2 / 1; transform: translateX(-50%);
 }
 .plate-card .frame video { opacity: 0; transition: opacity 0.25s; }
 .plate-card .frame video.playing { opacity: 1; }
+.plate-card .frame .stitch-status-label { position: absolute; left: 10px; bottom: 10px; z-index: 2; }
 .plate-card .sku-chip, .plate-card .dur-chip {
   position: absolute; padding: 4px 8px; color: #fffaf2;
   background: rgba(10, 10, 12, 0.9); font-size: 11px; letter-spacing: 0.08em;
@@ -2276,8 +2278,8 @@ body::before {
 .site-logo>.brand-artwork{width:100%!important}
 .coming-soon-content .site-logo{width:320px;max-width:85vw}
 .coming-soon-orbit img{width:100%;height:auto}
-.site-header{--header-logo-width:260px;background:linear-gradient(to right,#000 0,#000 calc(var(--header-logo-width) + 20px),rgba(14,14,16,.96) calc(var(--header-logo-width) + 220px),rgba(14,14,16,.88) 100%)}
-.site-header .wrap{max-width:none;width:100%;margin:0;padding:0 clamp(16px,4vw,64px) 0 0;gap:24px}
+.site-header{--header-logo-width:260px;--header-logo-inset:24px;background:linear-gradient(to right,#000 0,#000 calc(var(--header-logo-width) + var(--header-logo-inset) + 20px),rgba(14,14,16,.96) calc(var(--header-logo-width) + var(--header-logo-inset) + 220px),rgba(14,14,16,.88) 100%)}
+.site-header .wrap{max-width:none;width:100%;margin:0;padding:0 clamp(16px,4vw,64px) 0 var(--header-logo-inset);gap:24px}
 .site-header .site-logo{width:var(--header-logo-width)}
 /* Only the homepage reel runs behind the navigation. */
 body:has(> .home-page) > .site-header {
@@ -2298,8 +2300,8 @@ body:has(> .home-page) .site-header .site-nav .cta:hover {
 }
 @media(max-width:720px){.site-header{--header-logo-width:200px}.site-header .wrap{gap:12px}}
 @media(max-width:520px){
-  .site-header{--header-logo-width:150px}
-  .site-header .wrap{gap:10px;height:auto;min-height:72px;padding:8px 12px 8px 0}
+  .site-header{--header-logo-width:150px;--header-logo-inset:16px}
+  .site-header .wrap{gap:10px;height:auto;min-height:72px;padding:8px 12px 8px var(--header-logo-inset)}
   .site-nav{flex:1;min-width:0;flex-wrap:wrap;justify-content:flex-end}
   .site-auth-actions{flex-wrap:wrap;justify-content:flex-end}
 }
@@ -2322,3 +2324,8 @@ body:has(> .home-page) .site-header .site-nav .cta:hover {
 .new-project-workspace .manual-scene-section { background: none; border: 0; border-top: 1px solid var(--hairline); padding-top: 20px; }
 .new-project-workspace .manual-scene-section h2 { font-size: 20px; }
 .new-project-workspace .manual-scene-body { padding: 16px 0 0; }
+
+.plate-detail-serial{margin:0 0 12px;font-size:16px;font-weight:600;letter-spacing:.08em;color:var(--paper)}
+
+.site-nav .site-order-link{border:1px solid var(--orange);padding:9px 13px;color:var(--paper);font-size:13px;white-space:nowrap}
+.site-nav .site-order-link:hover{background:var(--orange);color:var(--ink)}

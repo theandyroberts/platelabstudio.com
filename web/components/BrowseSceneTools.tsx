@@ -1,4 +1,6 @@
 "use client";
+import { stitchStatus } from "@platelab/shared";
+import { StitchStatus } from "./StitchStatus";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -82,9 +84,10 @@ export function useBrowseSceneLibrary(sceneId: string, returnPath: string, onPen
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "The clip could not be updated.");
+      window.dispatchEvent(new Event('platelab-order-updated'));
       if (activeScene.current !== targetScene) return;
       setLibrary(current => current && ({ ...current, clips: current.clips.map(item => item.id === clip.id ? { ...item, ...body } : item) }));
-      setFeedback(status === "selected" ? `${clip.plate.sku} added to quote.` : "Saved clips updated.");
+      setFeedback(status === "selected" ? `${clip.plate.sku} added to order.` : "Saved clips updated.");
     } catch (reason) {
       if (activeScene.current === targetScene) setError(reason instanceof Error ? reason.message : "The clip could not be updated.");
     } finally { setPending(false); }
@@ -105,11 +108,11 @@ type SceneToolsProps = {
 export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, onSearchScene, onPendingSave }: SceneToolsProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const scene = state.library?.scenes.find(item => item.id === sceneId);
-  const [tab, setTab] = useState<"saved" | "quote" | "dismissed">("saved");
+  const [tab, setTab] = useState<"saved" | "order" | "dismissed">("saved");
   const clips = state.library?.clips ?? [];
   const saved = clips.filter(clip => clip.status !== "rejected");
-  const quoted = saved.filter(clip => clip.status === "selected" || clip.status === "submitted");
-  const visible = tab === "quote" ? quoted : tab === "dismissed" ? clips.filter(clip => clip.status === "rejected") : saved;
+  const orderClips = saved.filter(clip => clip.status === "selected" || clip.status === "submitted");
+  const visible = tab === "order" ? orderClips : tab === "dismissed" ? clips.filter(clip => clip.status === "rejected") : saved;
 
   useEffect(() => {
     if (state.open && !dialog.current?.open) dialog.current?.showModal();
@@ -168,12 +171,12 @@ export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, on
             {pendingSku && <button className="primary-button" disabled={!scene || state.pending} onClick={() => state.save(pendingSku)}>Save {pendingSku} to scene</button>}
             {scene && <>
               <div className={styles.tabs} role="tablist" aria-label="Saved clip views">
-                {(["saved", "quote", "dismissed"] as const).map(value => <button key={value} role="tab" aria-selected={tab === value} aria-controls="saved-clip-list" onClick={() => setTab(value)}>{value === "saved" ? `Saved (${saved.length})` : value === "quote" ? `In quote (${quoted.length})` : "Dismissed"}</button>)}
+                {(["saved", "order", "dismissed"] as const).map(value => <button key={value} role="tab" aria-selected={tab === value} aria-controls="saved-clip-list" onClick={() => setTab(value)}>{value === "saved" ? `Saved (${saved.length})` : value === "order" ? `In order (${orderClips.length})` : "Dismissed"}</button>)}
               </div>
               <div id="saved-clip-list" role="tabpanel" aria-label={tab}>
-                {!visible.length && <p className={styles.empty}>{tab === "quote" ? "No clips in quote." : tab === "dismissed" ? "No dismissed clips." : "No saved clips for this scene."}</p>}
+                {!visible.length && <p className={styles.empty}>{tab === "order" ? "No clips in order." : tab === "dismissed" ? "No dismissed clips." : "No saved clips for this scene."}</p>}
                 {visible.map(clip => {
-                  const inQuote = clip.status === "selected" || clip.status === "submitted";
+                  const inOrder = clip.status === "selected" || clip.status === "submitted";
                   const duration = formatSceneClipSelectionDuration(clip.inFrame, clip.outFrame, clip.plate.media.fps);
                   const studioHref = clip.plate.renditions.stagePreview ? buildStudioHref({
                     video: publicMediaUrl(clip.plate.renditions.stagePreview), label: `${clip.plate.sku} · ${clip.plate.title}`,
@@ -181,15 +184,15 @@ export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, on
                     scene: { projectId: scene.projectId, projectName: scene.projectName, sceneId: scene.id, sceneName: scene.name },
                     selection: { sceneClipId: clip.id, version: clip.version, inFrame: clip.inFrame, outFrame: clip.outFrame },
                   }) : null;
-                  return <article key={clip.id} className={styles.clip}>
+                  return <article key={clip.id} className={`${styles.clip} stitch-surface`} data-stitch-status={stitchStatus(clip.plate.stitchStatus)}>
                     <Link href={`/plate/${clip.plate.sku}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={publicMediaUrl(clip.plate.renditions.poster)} alt={clip.plate.title} loading="lazy" />
                     </Link>
-                    <div><span className="mono dim">{clip.plate.sku}</span><h3>{clip.plate.title}</h3>{duration && <p>Saved range: {duration}</p>}</div>
+                    <div><StitchStatus status={clip.plate.stitchStatus} /><span className="mono dim">{clip.plate.sku}</span><h3>{clip.plate.title}</h3>{duration && <p>Saved range: {duration}</p>}</div>
                     <div className={styles.clipActions}>
                       {studioHref && <Link className="secondary-button" href={studioHref}>Open in Studio</Link>}
-                      <button className={inQuote ? "secondary-button" : "primary-button"} disabled={state.pending} onClick={() => state.setStatus(clip, inQuote || clip.status === "rejected" ? "considering" : "selected")}>{inQuote ? "Remove from quote" : clip.status === "rejected" ? "Restore clip" : "Add to quote"}</button>
+                      <button className={inOrder ? "secondary-button" : "primary-button"} disabled={state.pending} onClick={() => state.setStatus(clip, inOrder || clip.status === "rejected" ? "considering" : "selected")}>{inOrder ? "Remove from order" : clip.status === "rejected" ? "Restore clip" : "Add to order"}</button>
                       {clip.status !== "rejected" && <button className="secondary-button" disabled={state.pending} onClick={() => state.setStatus(clip, "rejected")}>Dismiss</button>}
                     </div>
                   </article>;

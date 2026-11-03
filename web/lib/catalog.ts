@@ -8,6 +8,7 @@ import {
 } from "@platelab/shared";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { withCatalogPreview } from "@/lib/catalogPreview";
 
 export async function getCatalog(options?: {
   includeDrafts?: boolean;
@@ -31,7 +32,7 @@ export async function getCatalog(options?: {
   return catalogSchema.parse({
     generatedAt,
     plates: (data ?? []).map((row) =>
-      plateSchema.parse(row.source_metadata),
+      withCatalogPreview(plateSchema.parse(row.source_metadata)),
     ),
   });
 }
@@ -54,7 +55,7 @@ export async function getPlate(
     .maybeSingle();
 
   if (error) throw new Error(`Unable to load ${sku}: ${error.message}`);
-  return data ? plateSchema.parse(data.source_metadata) : undefined;
+  return data ? withCatalogPreview(plateSchema.parse(data.source_metadata)) : undefined;
 }
 
 export async function getLivePlate(sku: string): Promise<Plate | undefined> {

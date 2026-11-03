@@ -265,8 +265,8 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
         />
         <button className="secondary-button" aria-expanded={filtersOpen} aria-controls="plate-search-filters" onClick={() => setFiltersOpen(value => !value)}><SlidersHorizontal size={18} /> Filters</button>
       </div>
-      <div className={styles.searchLayout} data-filters-open={filtersOpen}>
-      <aside id="plate-search-filters" className={styles.filters} hidden={!filtersOpen}>
+      <div className={styles.searchLayout}>
+      <section id="plate-search-filters" aria-label="Search filters" className={styles.filters} hidden={!filtersOpen}>
         <FacetGroup
           label="Shot type"
           options={facets.shotType}
@@ -326,7 +326,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
             </div>
           </div>
         )}
-      </aside>
+      </section>
 
       <div>
         <div className={`results-head ${styles.resultsHead}`}>

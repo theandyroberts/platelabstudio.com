@@ -1,5 +1,7 @@
 "use server";
 
+import {plateActionReturnPath} from "@/lib/plateActions";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -249,6 +251,12 @@ export async function createProject(formData: FormData) {
     );
   }
 
+  const plateReturn=plateActionReturnPath(formString(formData,"plateReturn"));
+  if(plateReturn){
+    const url=new URL(plateReturn,"http://localhost");
+    url.searchParams.set("scene",result.scene_id);
+    redirect(url.pathname+url.search);
+  }
   if (intent === "find-plates" || formString(formData, "saveSku")) {
     redirect(sceneSearchHref({ id: result.scene_id, name: firstSceneName, search_brief: searchBrief }, formString(formData, "saveSku") || undefined));
   }

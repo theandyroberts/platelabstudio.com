@@ -1,4 +1,5 @@
 export * from "./catalog";
+export * from "./stitchStatus";
 export * from "./catalogDatabase";
 export * from "./pricing";
 export * from "./sku";

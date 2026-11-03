@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { siteTitle } from "@/lib/siteTitle";
 import { hostnameFromHost, isComingSoonHostname } from "@/lib/siteHosts";
 import "./globals.css";
+import "../../shared/stitch-status.css";
 
 const hanken = Hanken_Grotesk({
   subsets: ["latin"],

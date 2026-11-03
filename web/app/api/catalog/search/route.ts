@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { plateSchema, type Json } from "@platelab/shared";
 import { createQueryEmbedding } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
+import { withCatalogPreview } from "@/lib/catalogPreview";
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     plates: (data ?? []).map((row) =>
-      plateSchema.parse(row.source_metadata),
+      withCatalogPreview(plateSchema.parse(row.source_metadata)),
     ),
     semantic: Boolean(queryEmbedding),
     degraded: Boolean(query && !queryEmbedding),

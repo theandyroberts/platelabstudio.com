@@ -1,4 +1,6 @@
 "use client";
+import { stitchStatus } from "@platelab/shared";
+import { StitchStatus } from "./StitchStatus";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -22,17 +24,19 @@ export type SceneClipWorkspaceCandidate = {
 
 const TAB_LABELS: Record<SceneClipWorkspaceTab, string> = {
   considering: "Saved",
-  selected: "In quote",
+  selected: "In order",
   rejected: "Dismissed",
 };
 
 export function SceneClipWorkspace({
   initialCandidates,
+  initialTab = "considering",
 }: {
   initialCandidates: SceneClipWorkspaceCandidate[];
+  initialTab?: SceneClipWorkspaceTab;
 }) {
   const [candidates, setCandidates] = useState(initialCandidates);
-  const [activeTab, setActiveTab] = useState<SceneClipWorkspaceTab>("considering");
+  const [activeTab, setActiveTab] = useState<SceneClipWorkspaceTab>(initialTab);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState({ message: "", tone: "" });
   const counts = useMemo(() => {
@@ -59,6 +63,7 @@ export function SceneClipWorkspace({
       );
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "The candidate could not be updated.");
+      window.dispatchEvent(new Event('platelab-order-updated'));
       setCandidates((current) => current.map((item) =>
         item.id === candidate.id
           ? { ...item, status: result.status, version: result.version }
@@ -67,7 +72,7 @@ export function SceneClipWorkspace({
       setFeedback({
         message: status === "rejected"
           ? `${candidate.plate.sku} dismissed.`
-          : status === "selected" ? `${candidate.plate.sku} added to quote.` : `${candidate.plate.sku} saved.`,
+          : status === "selected" ? `${candidate.plate.sku} added to order.` : `${candidate.plate.sku} saved.`,
         tone: "success",
       });
     } catch (error) {
@@ -109,7 +114,7 @@ export function SceneClipWorkspace({
         {visible.length ? (
           <div className={styles.grid}>
             {visible.map((candidate) => (
-              <article key={candidate.id} className={styles.card}>
+              <article key={candidate.id} className={`${styles.card} stitch-surface`} data-stitch-status={stitchStatus(candidate.plate.stitchStatus)}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   className={styles.poster}
@@ -117,6 +122,7 @@ export function SceneClipWorkspace({
                   alt={`Preview of ${candidate.plate.title}`}
                 />
                 <div className={styles.body}>
+                  <StitchStatus status={candidate.plate.stitchStatus} />
                   <p className="mono accent">{candidate.plate.sku}</p>
                   <h2>{candidate.plate.title}</h2>
                   <p className={styles.metadata}>
@@ -147,7 +153,7 @@ export function SceneClipWorkspace({
                       <>
                       <button className={styles.action} type="button" disabled={pendingId !== null}
                         onClick={() => updateStatus(candidate, candidate.status === "selected" || candidate.status === "submitted" ? "considering" : "selected")}>
-                        {candidate.status === "selected" || candidate.status === "submitted" ? "Remove from quote" : "Add to quote"}
+                        {candidate.status === "selected" || candidate.status === "submitted" ? "Remove from order" : "Add to order"}
                       </button>
                       <button
                         className={styles.reject}

@@ -165,7 +165,7 @@ export default async function ProjectPage({
                   <th scope="col">Scene</th>
                   <th scope="col">Footage description</th>
                   <th scope="col">Saved</th>
-                  <th scope="col">In quote</th>
+                  <th scope="col">In order</th>
                   <th scope="col">Actions</th>
                 </tr>
               </thead>

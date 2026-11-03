@@ -5,7 +5,7 @@ export type TaggedClip={id:string;title:string;posterURL:string;tags?:string[];m
 export function CompositeTags({tags,base='',catalogPath}:{tags:string[];base?:string;catalogPath?:string}){
   if(!tags.length)return null;
   const links=(values:string[])=>values.map(tag=><a key={tag} href={`${catalogPath??`${base}/review`}?tag=${encodeURIComponent(tag)}`} className={styles.tag}>{tag}<span aria-hidden="true">↗</span></a>);
-  return <section id="content-tags" className={styles.tagSection} aria-label="Content tags"><div className={styles.tagHeading}><h2>Content tags <span className={styles.tagCount}>{tags.length}</span></h2><p>Click a tag to find matching clips.</p></div><div className={styles.tags}>{links(tags)}</div></section>;
+  return <section id="content-tags" className={styles.tagSection} aria-label="Related searches"><div className={styles.tagHeading}><h2>Related searches <span className={styles.tagCount}>{tags.length}</span></h2><p>Find more clips with similar content.</p></div><div className={styles.tags}>{links(tags)}</div></section>;
 }
 export function CompositeTagCatalog({clips,query='',base='',publicReview=false}:{clips:TaggedClip[];query?:string;base?:string;publicReview?:boolean}){
   const tag=canonicalTag(query),matches=clips.filter(clip=>hasCompositeTag(clip,query));

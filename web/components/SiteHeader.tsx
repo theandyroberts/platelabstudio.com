@@ -2,6 +2,7 @@ import Link from "next/link";
 import { signOut } from "@/app/(auth)/actions";
 import { accountDisplayName } from "@/lib/auth/displayName";
 import { createClient } from "@/lib/supabase/server";
+import { OrderHeaderLink } from "./OrderHeaderLink";
 import { Logo } from "./Logo";
 
 export async function SiteHeader() {
@@ -51,6 +52,7 @@ export async function SiteHeader() {
           <Link className="projects-link" href="/projects">
             Projects{projectCount !== null ? ` (${projectCount})` : ""}
           </Link>
+          {user && <OrderHeaderLink />}
           {user && displayName ? (
             <div className="site-account" aria-label={`Signed in as ${displayName}`}>
               <span className="site-account-name mono">

@@ -1,10 +1,11 @@
+import {plateActionReturnPath} from "@/lib/plateActions";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createProject } from "../actions";
 
 type NewProjectPageProps = {
-  searchParams: Promise<{ error?: string; save?: string }>;
+  searchParams: Promise<{ error?: string; save?: string; plateReturn?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,13 @@ export default async function NewProjectPage({
   searchParams,
 }: NewProjectPageProps) {
   const params = await searchParams;
+  const plateReturn=plateActionReturnPath(params.plateReturn);
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user&&plateReturn) redirect(`/login?next=${encodeURIComponent(`/projects/new?plateReturn=${encodeURIComponent(plateReturn)}`)}`);
   if (!user) redirect(`/login?next=${encodeURIComponent(`/projects/new${params.save ? `?save=${encodeURIComponent(params.save)}` : ""}`)}`);
 
   const [{ data: profile }, { data: membership }] = await Promise.all([
@@ -56,6 +59,7 @@ export default async function NewProjectPage({
 
       <form action={createProject} className="workspace-form dense-form">
         <input type="hidden" name="vehicle" value="sedan" />
+        {plateReturn&&<input type="hidden" name="plateReturn" value={plateReturn}/>}
         {params.save && <input type="hidden" name="saveSku" value={params.save} />}
         {organization ? (
           <input

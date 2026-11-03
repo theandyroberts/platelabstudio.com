@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {buildImuTrack} from '../../viewer/src/imu-motion.js';
+import {mapAlignedAttitude} from '../../viewer/src/attitude-heading.js';
 import styles from './VehicleAttitude.module.css';
 
 type Vec=[number,number,number];
@@ -16,7 +17,8 @@ function rotate(p:Vec,q:number[]):Vec{
 function project(p:Vec){return [110+dot(p,right)*39,99-dot(p,up)*39,dot(p,depth)];}
 const degrees=(n:number)=>`${Math.abs(n)<.05?'0.0':n.toFixed(1)}°`;
 
-export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,compact=false}:{motionURL:string;time:number;videoId:string;stageBase?:string;compact?:boolean}){
+export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,compact=false,panel=false,overlay=false,initialHeading}:{motionURL:string;time:number;videoId:string;stageBase?:string;compact?:boolean;panel?:boolean;overlay?:boolean;initialHeading?:number}){
+  const northUp=Number.isFinite(initialHeading);
   const [track,setTrack]=useState<Track|null>(null),[status,setStatus]=useState('Loading IMU…'),[now,setNow]=useState(time);
   const host=useRef<HTMLElement>(null),canvas=useRef<HTMLCanvasElement>(null);
   const miniature=useRef<{setPose:(q:number[])=>void;dispose:()=>void}|null>(null),poseRef=useRef<number[]>([0,0,0,1]);
@@ -26,11 +28,11 @@ export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,
     const stageBase=stageOverride??(motionURL.split('/media/')[0]+'/stage');
     import('../../viewer/src/attitude-ferrari.js').then(({createAttitudeFerrari})=>{
       if(cancelled||!canvas.current)return;
-      const model=createAttitudeFerrari(canvas.current,stageBase);miniature.current=model;
+      const model=createAttitudeFerrari(canvas.current,stageBase,{northUp});miniature.current=model;
       return model.ready.then(()=>{if(!cancelled){model.setPose(poseRef.current);setModelReady(true);}});
     }).catch(()=>{if(!cancelled){miniature.current?.dispose();miniature.current=null;setModelReady(false);}});
     return()=>{cancelled=true;miniature.current?.dispose();miniature.current=null;};
-  },[motionURL,stageOverride]);
+  },[motionURL,stageOverride,northUp]);
   useEffect(()=>{setNow(time);},[time]);
   useEffect(()=>{
     const controller=new AbortController();setTrack(null);setStatus('Loading IMU…');
@@ -50,14 +52,16 @@ export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,
     video.addEventListener('play',start);video.addEventListener('pause',stop);video.addEventListener('seeked',sync);if(!video.paused)start();
     return()=>{cancelAnimationFrame(frame);observer.disconnect();video.removeEventListener('play',start);video.removeEventListener('pause',stop);video.removeEventListener('seeked',sync);};
   },[videoId]);
-  const pose=track?.sampleAttitude(now),q=pose?.quaternion.toArray()??[0,0,0,1];
+  const pose=track?.sampleAttitude(now),relative=pose?.quaternion.toArray()??[0,0,0,1];
+  const q=northUp?mapAlignedAttitude(relative,initialHeading!):relative;
   poseRef.current=q;
   useEffect(()=>{miniature.current?.setPose(q);},[q[0],q[1],q[2],q[3]]);
-  const axis=(end:Vec)=>{const p=project(rotate(end,q));return {x:p[0],y:p[1]};};
+  const axis=(end:Vec)=>{const rotated=rotate(end,q);const p=northUp?[110+rotated[0]*39,99-(rotated[1]*.894-rotated[2]*.447)*39]:project(rotated);return {x:p[0],y:p[1]};};
   const pitch=axis([0,0,2]),roll=axis([2,0,0]),yaw=axis([0,2,0]);
-  return <aside ref={host} className={`${styles.indicator} ${compact?styles.compact:''}`} aria-label="Vehicle IMU attitude" data-time={now.toFixed(3)} data-state={pose?'ready':status?'loading-or-unavailable':'no-sample'} title="Estimated vehicle attitude relative to the initial pose. Phone mounting is assumed; physical camera/sensor sync is unverified. Lab 360 stays level.">
-    <div className={styles.heading}><span className={pose?styles.signal:styles.noSignal}/><strong>IMU</strong><span>EST.</span></div>
+  return <aside ref={host} className={`${styles.indicator} ${overlay?styles.overlay:''} ${panel?styles.panel:compact?styles.compact:''}`} aria-label="Vehicle IMU attitude" data-map-heading={northUp?initialHeading:undefined} data-time={now.toFixed(3)} data-state={pose?'ready':status?'loading-or-unavailable':'no-sample'} title={northUp?"North-up view aligned to the initial GPS direction. Roll, pitch and relative yaw are estimated from IMU; sensor sync is unverified. Lab 360 stays level.":"Estimated vehicle attitude relative to the initial pose. Phone mounting is assumed; physical camera/sensor sync is unverified. Lab 360 stays level."}>
+    <div className={styles.heading}><span className={pose?styles.signal:styles.noSignal}/><strong>{panel?'Car angle · IMU':'IMU'}</strong><span>EST.</span></div>
     <div className={styles.visual}><svg className={styles.instrument} viewBox="0 0 220 190" role="img" aria-label={pose?`Estimated roll ${degrees(pose.rollDeg)}, pitch ${degrees(pose.pitchDeg)}, yaw ${degrees(pose.yawDeg)}`:status||'No IMU sample at this moment'}>
+      {northUp&&<text x="110" y="8" textAnchor="middle" fill="#e3e3d5" fontSize="8">N</text>}
       <circle cx="110" cy="96" r="82" fill="none" stroke="#ad9e7d" strokeWidth="1.4"/>
       <ellipse cx="110" cy="96" rx="82" ry="25" fill="none" stroke="#779486" strokeOpacity=".35"/>
       <ellipse cx="110" cy="96" rx="31" ry="82" fill="none" stroke="#779486" strokeOpacity=".3" transform="rotate(-26 110 96)"/>
@@ -67,7 +71,7 @@ export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,
         {[{p:roll,c:'#dfb268',label:'R'},{p:pitch,c:'#83becd',label:'P'},{p:yaw,c:'#b9d59a',label:'Y'}].map(({p,c,label})=><g key={label}><path d={`M110 99L${p.x} ${p.y}`} stroke={c} strokeWidth="1.5"/><circle cx={p.x} cy={p.y} r="3" fill={c}/><text x={p.x+6} y={p.y-5} fill={c} fontSize="10">{label}</text></g>)}
       </g>
     </svg><canvas ref={canvas} className={styles.car} aria-hidden="true" style={{opacity:modelReady?(pose?1:.25):0}}/></div>
-    <div className={styles.readings}>{(['roll','pitch','yaw'] as const).map(name=><div key={name} className={styles[name]}><span>{name[0].toUpperCase()}</span><strong>{pose?degrees(pose[`${name}Deg`]):'—'}</strong></div>)}</div>
+    <div className={styles.readings}>{(['roll','pitch','yaw'] as const).map(name=><div key={name} className={styles[name]}><span>{panel?name:name[0].toUpperCase()}</span><strong>{pose?degrees(pose[`${name}Deg`]):'—'}</strong></div>)}</div>
     {!pose&&<p>{status||'No sample'}</p>}
   </aside>;
 }

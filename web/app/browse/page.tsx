@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function BrowsePage() {
   const plates = await getLivePlates();
   return (
-    <main className="wrap">
+    <main className="wrap browse-page">
       <Suspense>
         <BrowseClient plates={plates} />
       </Suspense>

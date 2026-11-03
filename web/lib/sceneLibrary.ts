@@ -1,6 +1,7 @@
 import type { Database } from "@platelab/shared";
 import { plateSchema } from "@platelab/shared";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { withCatalogPreview } from "@/lib/catalogPreview";
 
 const reply = (body: unknown, status = 200) => ({ body, status });
 
@@ -27,7 +28,7 @@ export async function readSceneLibrary(supabase: SupabaseClient<Database>, scene
   const parsed = (clips ?? []).flatMap(row => {
     const stock = Array.isArray(row.stock_clips) ? row.stock_clips[0] : row.stock_clips;
     const result = plateSchema.safeParse(stock?.source_metadata);
-    return result.success ? [{ id: row.id, status: row.status, version: row.version, inFrame: row.in_frame, outFrame: row.out_frame, plate: result.data }] : [];
+    return result.success ? [{ id: row.id, status: row.status, version: row.version, inFrame: row.in_frame, outFrame: row.out_frame, plate: withCatalogPreview(result.data) }] : [];
   });
   if (parsed.length !== (clips ?? []).length) return reply({ error: "Some saved clip details are unavailable. Please retry." }, 503);
   return reply({ authenticated: true, scenes, clips: parsed });

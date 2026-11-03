@@ -11,6 +11,7 @@ import {
 } from "@/lib/catalog";
 import { SyncedPlayer } from "@/components/SyncedPlayer";
 import { GpsPanel } from "@/components/GpsPanel";
+import { PlateActions } from "@/components/PlateActions";
 import { PriceBlock } from "@/components/PriceBlock";
 import { PlateCard } from "@/components/PlateCard";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
@@ -53,7 +54,10 @@ export default async function PlatePage({
 
   if (plate.composite) {
     const clip = await loadImportedComposite(plate);
-    return <><CompositeDetail clip={clip} catalogMode browseHref={browseReturnPath}/><section className="wrap" style={{paddingBottom:64}}><PriceBlock plate={plate} browseReturnPath={browseReturnPath}/></section></>;
+    // Array reference: docs/specs/2026-06-10-platelab-design.md.
+    // Imported snapshots do not verify per-clip camera settings.
+    // 16K+ is the requested Spheris XL catalog value, not a measured preview size.
+    return <><CompositeDetail captureDetails={{array:plate.rig.replace(/ · imported composite$/,''),...(plate.rig.startsWith('Spheris XL')?{arrayReference:true,maxResolution:'16K+',camera:'9 × RED KOMODO 6K',recording:'RED RAW',lenses:['Laowa 12 mm ring · 9 mm sky','Rectilinear']}:{})}} sku={plate.sku} stitchStatus={plate.stitchStatus} clip={clip} catalogMode browseHref={browseReturnPath}/><section className="wrap" style={{paddingBottom:64}}><PriceBlock plate={plate} browseReturnPath={browseReturnPath}/></section></>;
   }
 
   const related = (await getLivePlates())
@@ -83,12 +87,9 @@ export default async function PlatePage({
     <main className="wrap">
       <div className="detail-head">
         <div>
-          <div className="crumbs mono dimmer">
-            <Link href={browseReturnPath}>Plates</Link>
-            <span>/</span>
-            <span className="accent">{plate.sku}</span>
-          </div>
+          <p className="plate-detail-serial mono">{plate.sku}</p>
           <h1>{plate.title}</h1>
+          <PlateActions sku={plate.sku}/>
         </div>
         <div className="mono dim" style={{ textAlign: "right", lineHeight: 2 }}>
           {plate.location.name} · {plate.location.city}, {plate.location.region}

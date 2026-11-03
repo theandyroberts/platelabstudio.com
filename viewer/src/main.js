@@ -1,4 +1,6 @@
 import './style.css'
+import '../../shared/stitch-status.css'
+import {stitchStatus,STITCH_STATUS_LABELS} from '../../shared/src/stitchStatus.ts'
 import { installControlVisibility } from './control-visibility.js'
 import {createVehicleLook,defaultVehicleLook} from './vehicle-look.js'
 import {makeWindowGlass,prepareVehicleOptics} from './vehicle-optics.js'
@@ -53,6 +55,18 @@ const CAMERA_SENSOR_WIDTH_MM = 36
 const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
 
 const presets = {
+  studio: {
+    name: 'Plate Lab',
+    diameterFt: 40,
+    heightFt: 26,
+    arcDeg: 360,
+    ceiling: true,
+    ceilingCoverage: 1.02,
+    panelWidthFt: 1.8,
+    panelHeightFt: 1.8,
+    doorGapDeg: 0,
+    notes: 'Default Plate Lab volume: 40 ft diameter, 26 ft high, full surround wall.',
+  },
   amazon: {
     name: 'Amazon MGM Stage 15',
     diameterFt: 80,
@@ -66,7 +80,7 @@ const presets = {
     notes: 'Public baseline: 80 ft diameter, 26 ft high, 3,000+ LED tiles, suspended ceiling panels.',
   },
   mandalorian: {
-    name: '270 Semi-Circle',
+    name: '270° Semi-Circle',
     diameterFt: 70,
     heightFt: 20,
     arcDeg: 270,
@@ -170,13 +184,13 @@ const vehicleModels = {
 }
 
 const state = {
-  presetKey: 'amazon',
+  presetKey: 'studio',
   selectedView: 'mediumRear',
   finishKey: 'red',
   vehicleKey: 'ferrari',
   vehicleYaw: 0,
   exposure: 1.15,
-  panelGrid: true,
+  panelGrid: false,
   reflections: true,
   playRate: 1,
   playback: {
@@ -214,16 +228,18 @@ const state = {
     custom: false,
   },
   customShots: loadCustomShots(),
-  dimensions: { ...presets.amazon },
+  dimensions: { ...presets.studio },
 }
 
 const app = document.querySelector('#app')
 const embedParams = new URLSearchParams(location.search)
+const footageStitchStatus = stitchStatus(embedParams.get('stitchStatus'))
 if (embedParams.get('embed') === '1') document.body.classList.add('composite-embed')
 if (embedParams.get('preview') === '1') document.body.classList.add('composite-preview')
 app.innerHTML = `
   <main class="workbench">
-    <section class="viewport" aria-label="LED wall preview">
+    <section class="viewport stitch-surface" data-stitch-status="${footageStitchStatus}" aria-label="LED wall preview">
+      <span class="stitch-status-label stitch-viewer-label">${STITCH_STATUS_LABELS[footageStitchStatus]}</span>
       <div class="viewport__bar">
         <div>
           <p class="eyebrow">Virtual production stock preview</p>
@@ -354,13 +370,13 @@ app.innerHTML = `
           <select id="presetSelect"></select>
         </label>
         <div class="metrics">
-          <div><strong id="diameterMetric">80 ft</strong><span>diameter</span></div>
+          <div><strong id="diameterMetric">40 ft</strong><span>diameter</span></div>
           <div><strong id="heightMetric">26 ft</strong><span>height</span></div>
           <div><strong id="arcMetric">320 deg</strong><span>wall arc</span></div>
         </div>
         <label class="range-field">
-          <span>Diameter <output id="diameterOut">80 ft</output></span>
-          <input id="diameter" type="range" min="24" max="120" step="1" value="80" />
+          <span>Diameter <output id="diameterOut">40 ft</output></span>
+          <input id="diameter" type="range" min="24" max="120" step="1" value="40" />
         </label>
         <label class="range-field">
           <span>Height <output id="heightOut">26 ft</output></span>
@@ -372,7 +388,6 @@ app.innerHTML = `
         </label>
         <div class="toggle-grid">
           <label><input id="ceilingToggle" type="checkbox" checked /> Ceiling LEDs</label>
-          <label><input id="gridToggle" type="checkbox" checked /> Panel grid</label>
         </div>
         <p class="notes" id="presetNotes"></p>
       </section>
@@ -734,7 +749,7 @@ buildCar()
 buildControls()
 // Vehicle attitude is visualized on the route map; the stabilized Lab stays level.
 bindCameraNavigation()
-applyPreset('amazon')
+applyPreset(state.presetKey)
 setView(state.selectedView, false)
 loadInitialFootage()
 
@@ -743,7 +758,7 @@ function buildControls() {
   Object.entries(presets).forEach(([key, preset]) => {
     const option = document.createElement('option')
     option.value = key
-    option.textContent = preset.name
+    option.textContent = `${preset.name} (${preset.diameterFt} ft × ${preset.heightFt} ft)`
     presetSelect.append(option)
   })
   presetSelect.value = state.presetKey
@@ -816,11 +831,6 @@ function buildControls() {
   document.querySelector('#ceilingToggle').addEventListener('change', (event) => {
     state.dimensions.ceiling = event.target.checked
     rebuildStage()
-  })
-  document.querySelector('#gridToggle').addEventListener('change', (event) => {
-    state.panelGrid = event.target.checked
-    gridGroup.visible = state.panelGrid
-    invalidateRender()
   })
   document.querySelector('#reflectionToggle').addEventListener('change', (event) => {
     state.reflections = event.target.checked
@@ -1788,7 +1798,7 @@ function loadInitialFootage() {
   const label = params.get('label')?.trim() || 'Plate preview'
   document.querySelector('#videoUrl').value = footageUrl
   document.querySelector('#fileName').textContent = label
-  loadVideoSource(footageUrl, label)
+  loadVideoSource(footageUrl, label, footageStitchStatus)
   const start = Number(params.get('start'))
   if (!sharedVideo && Number.isFinite(start) && start > 0) video.addEventListener('loadedmetadata', () => {
     video.currentTime = Math.min(start, Math.max(0, video.duration - 1 / state.playback.fps))
@@ -1873,7 +1883,11 @@ function renderStudioContext() {
   }
 }
 
-async function loadVideoSource(src, label) {
+async function loadVideoSource(src, label, quality = 'rough') {
+  // Loading another file must not inherit a catalog clip's production-ready status.
+  const currentStitchStatus = stitchStatus(quality)
+  document.querySelector('.viewport').dataset.stitchStatus = currentStitchStatus
+  document.querySelector('.viewport > .stitch-status-label').textContent = STITCH_STATUS_LABELS[currentStitchStatus]
   const query = new URLSearchParams(location.search)
   const initial = query.get('video')
   const sameSource = initial && new URL(initial, location.href).href === new URL(src, location.href).href
@@ -2430,7 +2444,7 @@ function makeFallbackTexture() {
   ctx.font = '700 74px Inter, Arial, sans-serif'
   ctx.fillText('LOAD YOUR 360 FOOTAGE', 116, 150)
   ctx.font = '400 38px Inter, Arial, sans-serif'
-  ctx.fillText('Amazon MGM Stage 15 replica baseline: 80 ft diameter / 26 ft high', 116, 214)
+  ctx.fillText('Plate Lab volume: 40 ft diameter / 26 ft high', 116, 214)
 
   const texture = new THREE.CanvasTexture(canvasTexture)
   texture.colorSpace = THREE.SRGBColorSpace
