@@ -57,7 +57,7 @@ export default async function PlatePage({
     // Array reference: docs/specs/2026-06-10-platelab-design.md.
     // Imported snapshots do not verify per-clip camera settings.
     // 16K+ is the requested Spheris XL catalog value, not a measured preview size.
-    return <><CompositeDetail captureDetails={{array:plate.rig.replace(/ · imported composite$/,''),...(plate.rig.startsWith('Spheris XL')?{arrayReference:true,maxResolution:'16K+',camera:'9 × RED KOMODO 6K',recording:'RED RAW',lenses:['Laowa 12 mm ring · 9 mm sky','Rectilinear']}:{})}} sku={plate.sku} stitchStatus={plate.stitchStatus} clip={clip} catalogMode browseHref={browseReturnPath}/><section className="wrap" style={{paddingBottom:64}}><PriceBlock plate={plate} browseReturnPath={browseReturnPath}/></section></>;
+    return <><CompositeDetail captureDetails={{array:plate.rig.replace(/ · imported composite$/,''),...(plate.rig.startsWith('Spheris XL')?{arrayReference:true,maxResolution:'16K+',camera:'9 × RED KOMODO 6K',recording:'RED RAW'}:{})}} sku={plate.sku} stitchStatus={plate.stitchStatus} clip={clip} catalogMode browseHref={browseReturnPath}/><section className="wrap" style={{paddingBottom:64}}><PriceBlock plate={plate} browseReturnPath={browseReturnPath}/></section></>;
   }
 
   const related = (await getLivePlates())

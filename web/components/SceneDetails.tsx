@@ -4,12 +4,15 @@ import {routeSpeeds} from '../lib/routeStats';
 
 /** Capture/delivery values are separate from the imported review movie's metadata. */
 export type CaptureDetails={
-  array?:string; arrayReference?:boolean; camera?:string; lenses?:string|string[]; recording?:string;
+  array?:string; arrayReference?:boolean; camera?:string; recording?:string;
   nativeStitch?:string; maxResolution?:string; hdr?:boolean;
 };
 
 export function SceneDetails({clip,capture}:{clip:CompositeClip;capture?:CaptureDetails}){
   const speeds=routeSpeeds(clip.map.segments);
+  const sourceCodec=({prores:'ProRes',h264:'H.264',hevc:'HEVC'} as Record<string,string>)[clip.media.codec]||clip.media.codec;
+  const sourceSampling=({yuv422p10le:'10-bit · 4:2:2',yuv444p10le:'10-bit · 4:4:4',yuv444p12le:'12-bit · 4:4:4',yuv420p:'8-bit · 4:2:0'} as Record<string,string>)[clip.media.pixelFormat??''];
+  const sourcePrimaries=clip.media.color.primaries==='bt709'?'Rec.709 stitch primaries':clip.media.color.primaries==='bt2020'?'Rec.2020 stitch primaries':null;
   const hdr=capture?.recording?.toUpperCase()==='RED RAW'||capture?.hdr===true;
   const origin=clip.map.segments.find(segment=>segment.length)?.[0];
   const duration=`${Math.floor(clip.media.duration/60).toString().padStart(2,'0')}:${Math.floor(clip.media.duration%60).toString().padStart(2,'0')}`;
@@ -23,13 +26,15 @@ export function SceneDetails({clip,capture}:{clip:CompositeClip;capture?:Capture
     <dl className={styles.specs}>
       <div><dt>Camera array</dt><dd>{capture?.array??'Not recorded'}</dd></div>
       <div><dt>Camera / capture{capture?.arrayReference?' · reference':''}</dt><dd>{capture?.camera??'To confirm'}{capture?.recording&&<small>{capture.recording}</small>}</dd></div>
-      <div className={styles.wide}><dt>Lenses{capture?.arrayReference?' · reference':''}</dt><dd>{(Array.isArray(capture?.lenses)?capture.lenses:[capture?.lenses??'Not recorded']).map((line,i)=><span className={styles.lensLine} key={i}>{line}</span>)}</dd></div>
+      {sourceCodec&&<div><dt>Stitch source</dt><dd>{sourceCodec}{sourceSampling&&<small>{sourceSampling}</small>}</dd></div>}
+      {clip.sourceTimecode&&<div><dt>Source timecode</dt><dd className={styles.timecode}>{clip.sourceTimecode}{Number.isInteger(clip.media.frameCount)&&clip.media.frameCount>0&&<small>{clip.media.frameCount.toLocaleString('en-US')} frames</small>}</dd></div>}
       {capture?.nativeStitch&&<div className={styles.wide}><dt>Native stitch</dt><dd>{capture.nativeStitch}</dd></div>}
     </dl>
     <div className={styles.flags} aria-label="Scene data and delivery">
       {origin&&<span>GPS route</span>}
       {clip.motionURL&&<span>IMU</span>}
       {hdr?<span>HDR available</span>:capture?.hdr===false?<span>SDR delivery</span>:null}
+      {sourcePrimaries&&<span>{sourcePrimaries}</span>}
     </div>
     <dl className={styles.route} aria-label="GPS route statistics">
       <div><dt>Route length</dt><dd>{Number.isFinite(clip.summary.meters)?`${(clip.summary.meters/1000).toFixed(2)} km`:'—'}</dd></div>
