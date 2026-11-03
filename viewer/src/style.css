@@ -1007,3 +1007,11 @@ input[type="checkbox"] {
 /* Keep the status above the stage while leaving the normal header unobscured. */
 .viewport > .stitch-viewer-label { top: auto; bottom: 12px; }
 .composite-preview .viewport > .stitch-viewer-label { top: 12px; bottom: auto; }
+
+/* Keep the tour reachable before the horizontally scrolling camera groups. */
+.view-strip #viewTour { flex: 0 0 auto; white-space: nowrap; }
+.view-strip #viewTour.is-active {
+  color: #e5eddb;
+  border-color: #7e8c70;
+  background: #333e2c;
+}

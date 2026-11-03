@@ -49,6 +49,7 @@ import {
 } from './scene-scale.js'
 import { VEHICLE_PHYSICAL_LENGTHS_FT } from './vehicle-specs.js'
 import { orientVehicleModel } from './vehicle-orientation.js'
+import { createViewTour, sampleViewTour } from './view-tour.js'
 
 const FEET_TO_UNITS = FEET_TO_SCENE_UNITS
 const CAMERA_SENSOR_WIDTH_MM = 36
@@ -513,7 +514,9 @@ controls.mouseButtons.RIGHT = THREE.MOUSE.PAN
 controls.touches.ONE = THREE.TOUCH.ROTATE
 controls.touches.TWO = THREE.TOUCH.DOLLY_PAN
 controls.maxPolarAngle = Math.PI * 0.49
-controls.minDistance = 1
+// Cabin presets have targets less than one scene unit away. A one-unit floor
+// pushes their cameras through the side glass when OrbitControls updates.
+controls.minDistance = 0.15
 controls.maxDistance = 32
 
 const stageGroup = new THREE.Group()
@@ -535,6 +538,13 @@ let embeddedActive = !sharedVideo
 let embeddedReady = false
 let lastFrameReport = Number.NEGATIVE_INFINITY
 let vehicleReady = false
+let vehicleLoading = false
+let vehicleLoadVersion = 0
+let displayedVehicleKey = null
+const viewTour = createViewTour()
+let cameraTweenVersion = 0
+let tourVehicleHeight = 0.73
+let lastTourPoseKey = ''
 THREE.DefaultLoadingManager.onLoad = () => invalidateRender({reflection:true})
 video.loop = true
 video.muted = true
@@ -779,6 +789,31 @@ function buildControls() {
   updateVehicleCredit()
 
   const viewStrip = document.querySelector('#viewStrip')
+  const tourButton = document.createElement('button')
+  tourButton.id = 'viewTour'
+  tourButton.type = 'button'
+  tourButton.textContent = 'View tour'
+  tourButton.title = 'Cycle the hero camera views while footage plays. Choose a camera or drag to stop.'
+  tourButton.setAttribute('aria-pressed', 'false')
+  tourButton.addEventListener('click', () => {
+    if (viewTour.enabled) stopViewTour()
+    else {
+      cameraTweenVersion++
+      // Flush orbit damping before the tour takes over the camera.
+      const damping = controls.enableDamping
+      controls.enableDamping = false
+      controls.update()
+      controls.enableDamping = damping
+      viewTour.start()
+      lastTourPoseKey = ''
+      clearActiveCameraViews()
+      tourButton.classList.add('is-active')
+      tourButton.setAttribute('aria-pressed', 'true')
+      updateViewTour()
+      invalidateRender()
+    }
+  })
+  viewStrip.append(tourButton)
   shotGroups.forEach((group) => {
     const wrapper = document.createElement('div')
     wrapper.className = 'view-group'
@@ -921,6 +956,7 @@ function buildControls() {
   document.querySelector('#saveSelection').addEventListener('click', saveSelection)
   document.querySelector('#resetView').addEventListener('click', () => setView(state.selectedView, false))
 
+  for (const event of ['pause', 'waiting', 'seeking', 'ended', 'loadstart']) video.addEventListener(event, () => viewTour.suspend())
   video.addEventListener('loadstart', () => {
     clearViewerFailure()
     setPlaybackStatus('Loading footage…', 'loading')
@@ -1168,15 +1204,23 @@ function loadVehicle(key) {
 
 function loadVehicleSpec(vehicle) {
   const vehicleKey = state.vehicleKey
-  vehicleReady = false
-  disposeVehicleMaterials(dynamicVehicleMaterials, sharedCarMaterials)
-  dynamicVehicleMaterials.clear()
-  clearGroup(carGroup)
-  applyVehicleYaw()
-
+  const loadVersion = ++vehicleLoadVersion
+  vehicleLoading = true
+  viewTour.suspend()
+  // Keep the last complete car on screen while the next model downloads.
+  // Its rendered frames remain valid for the parent's playback watchdog.
   vehicleLoader.load(
     vehicle.file,
     (gltf) => {
+      if (loadVersion !== vehicleLoadVersion) {
+        disposeVehicleMaterials(collectObjectMaterials(gltf.scene), sharedCarMaterials)
+        gltf.scene.traverse(child => child.geometry?.dispose())
+        return
+      }
+      disposeVehicleMaterials(dynamicVehicleMaterials, sharedCarMaterials)
+      dynamicVehicleMaterials.clear()
+      clearGroup(carGroup)
+      applyVehicleYaw()
       const carModel = orientVehicleModel(gltf.scene, vehicleKey)
       const sourceMaterials = collectObjectMaterials(carModel)
       carModel.name = vehicle.label
@@ -1184,20 +1228,35 @@ function loadVehicleSpec(vehicle) {
       applyCarMaterials(carModel)
       disposeVehicleMaterials(sourceMaterials, collectObjectMaterials(carModel))
       normalizeVehicleModel(carModel, vehicle)
+      carModel.updateMatrixWorld(true)
+      tourVehicleHeight = new THREE.Box3().setFromObject(carModel).getSize(new THREE.Vector3()).y
       vehicleLook.install(carModel)
       syncEnvironment()
 
       carGroup.add(makeVehicleShadow(vehicle))
       carGroup.add(carModel)
       vehicleReady = true
+      vehicleLoading = false
+      displayedVehicleKey = vehicleKey
       setPlaybackStatus(video.src ? 'Playing' : `${vehicle.label} loaded`)
       document.querySelector('#vehicleCredit').textContent = vehicle.credit
       invalidateRender()
     },
     undefined,
     () => {
+      if (loadVersion !== vehicleLoadVersion) return
+      vehicleLoading = false
+      if (vehicleReady && displayedVehicleKey) {
+        state.vehicleKey = displayedVehicleKey
+        document.querySelector('#vehicleSelect').value = displayedVehicleKey
+        updateVehicleCredit()
+        setPlaybackStatus('Vehicle could not load. Keeping the current car.')
+        invalidateRender()
+        return
+      }
       clearGroup(carGroup)
       buildFallbackCar()
+      tourVehicleHeight = 0.73
       vehicleReady = true
       syncEnvironment()
       setPlaybackStatus('Using fallback car')
@@ -1412,11 +1471,50 @@ function setFinish(key) {
   invalidateRender()
 }
 
+function stopViewTour(syncRig = true) {
+  if (!viewTour.enabled) return
+  viewTour.stop()
+  const button = document.querySelector('#viewTour')
+  button.classList.remove('is-active')
+  button.setAttribute('aria-pressed', 'false')
+  delete button.dataset.shot
+  if (syncRig) markCameraCustomFromLiveView()
+  invalidateRender()
+}
+
+function updateViewTour() {
+  if (!viewTour.enabled) return
+  viewTour.advance(video.currentTime, vehicleReady && !vehicleLoading && !video.paused && !video.ended && !video.seeking && video.readyState >= 3)
+  if (!vehicleReady || vehicleLoading) return
+  const poseKey = `${viewTour.elapsed}:${state.vehicleKey}:${tourVehicleHeight}:${reducedMotionQuery.matches}`
+  if (poseKey === lastTourPoseKey) return
+  lastTourPoseKey = poseKey
+  const pose = sampleViewTour(viewTour.elapsed, views, {
+    reducedMotion: reducedMotionQuery.matches,
+    lengthScale: vehicleModels[state.vehicleKey].targetLengthFt / VEHICLE_PHYSICAL_LENGTHS_FT.ferrari,
+    heightScale: tourVehicleHeight / 0.73,
+    enclosed: state.vehicleKey !== 'ferrari',
+  })
+  camera.position.fromArray(pose.position)
+  controls.target.fromArray(pose.target)
+  camera.fov = pose.fov
+  camera.updateProjectionMatrix()
+  stageVideoUniforms.originY.value = 1.0
+  state.selectedView = pose.view
+  state.cameraRig.custom = true
+  const button = document.querySelector('#viewTour')
+  button.dataset.shot = String(pose.index)
+  button.title = `View tour: ${pose.label}. Pause footage to pause the tour; choose a camera or drag to stop.`
+  document.querySelector('#cameraMode').textContent = `View tour · ${pose.label}`
+}
+
 function setView(key, animate = true) {
+  stopViewTour()
+  const tweenVersion = ++cameraTweenVersion
   state.selectedView = key
   state.cameraRig.custom = false
   const view = views[key]
-  document.querySelectorAll('.view-strip button').forEach((button) => {
+  document.querySelectorAll('.view-strip button[data-view]').forEach((button) => {
     const active = button.dataset.view === key
     button.classList.toggle('is-active', active)
     button.setAttribute('aria-pressed', String(active))
@@ -1444,6 +1542,7 @@ function setView(key, animate = true) {
   const duration = 900
 
   function tween(now) {
+    if (tweenVersion !== cameraTweenVersion) return
     const t = Math.min(1, (now - started) / duration)
     const eased = 1 - Math.pow(1 - t, 3)
     camera.position.lerpVectors(startPosition, destination, eased)
@@ -1456,6 +1555,8 @@ function setView(key, animate = true) {
 }
 
 function applyCameraRig() {
+  stopViewTour(false)
+  cameraTweenVersion++
   const rig = state.cameraRig
   stageVideoUniforms.originY.value = 1.0
   const yaw = THREE.MathUtils.degToRad(rig.orbitDeg)
@@ -1499,6 +1600,8 @@ function bindCameraNavigation() {
     resetKeyNavigation()
   })
   canvas.addEventListener('pointerdown', () => {
+    stopViewTour()
+    cameraTweenVersion++
     canvas.focus()
   })
 
@@ -1529,6 +1632,8 @@ function bindCameraNavigation() {
   canvas.addEventListener(
     'wheel',
     (event) => {
+      stopViewTour()
+      cameraTweenVersion++
       const focalScroll = pressedKeys.has('KeyF') || pressedKeys.has('KeyZ')
       const activeModes = [
         spaceOrbit ? 'Space' : '',
@@ -1574,6 +1679,8 @@ function bindCameraNavigation() {
   canvas.addEventListener('dblclick', () => setView(state.selectedView))
 
   controls.addEventListener('start', () => {
+    stopViewTour()
+    cameraTweenVersion++
     controlsMoving = true
     state.cameraRig.custom = true
     document.querySelector('#cameraMode').textContent = 'Free orbit'
@@ -1632,7 +1739,7 @@ function markCameraCustomFromLiveView(label = 'Custom rig') {
 }
 
 function clearActiveCameraViews() {
-  document.querySelectorAll('.view-strip button').forEach((button) => {
+  document.querySelectorAll('.view-strip button[data-view]').forEach((button) => {
     button.classList.remove('is-active')
     button.setAttribute('aria-pressed', 'false')
   })
@@ -2510,6 +2617,7 @@ function renderFrame(now) {
   if (document.hidden || (sharedVideo && !embeddedActive && embeddedReady)) return
 
   const resized = resizeRenderer()
+  updateViewTour()
   const controlsChanged = controls.update()
   const constrained = constrainCameraToStageInterior()
   const videoPlaying = Boolean(video.src && !video.paused && !video.ended)
@@ -2561,10 +2669,12 @@ window.addEventListener('message', event => {
     return
   }
   embeddedActive = Boolean(event.data.active)
+  if (!embeddedActive) viewTour.suspend()
   if (embeddedActive || !embeddedReady) { invalidateRender(); scheduleVideoFrameRender() }
   else cancelVideoFrameRender()
 })
 renderer.domElement.addEventListener('webglcontextlost', () => {
+  viewTour.suspend()
   embeddedReady=false
   if(sharedVideo)window.parent.postMessage({type:'tpl-stage-error'},location.origin)
 })
@@ -2584,6 +2694,7 @@ window.addEventListener('message', event => {
 })
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    viewTour.suspend()
     if (renderFrameId !== null) cancelAnimationFrame(renderFrameId)
     renderFrameId = null
     cancelVideoFrameRender()

@@ -101,6 +101,22 @@ ffmpeg -n -i "$MASTER" -map 0:v:0 -an -c:v libx264 -preset medium -crf 20 -pix_f
 ffmpeg -n -ss 50 -i "$MASTER" -frames:v 1 -vf scale=1920:-1 -q:v 2 -update 1 web/public/media/site/mustang-study14-reflections-poster.jpg
 ```
 
+### Lab camera tour
+
+**View tour**, beside the camera presets in both Lab builds, starts a repeating
+72-second sequence adapted from the homepage showreel. It uses the current clip
+and vehicle, with gentle camera moves within each shot and cuts into/out of the
+cabin. The vehicle's travel orientation is unchanged. The sequence is defined in
+`viewer/src/view-tour.js`; the original hero is a prerecorded render, not a live
+camera track.
+
+The toggle defaults off and preserves the current play/pause state. Tour time
+advances only with playable footage; pauses, buffering, seeking, hidden views,
+and vehicle loading suspend it. Short clips can loop while the tour continues.
+Choosing a camera, dragging/zooming the canvas, or adjusting the camera rig stops
+the tour. Reduced-motion users get stationary shots with cuts instead of camera
+moves. Rebuild both `stage` and `imported-stage` after viewer changes.
+
 ### Studio visitor controls
 
 Open `/admin/studio-controls` (or `/admin`) and sign in with `ADMIN_PASSWORD`.
