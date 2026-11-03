@@ -47,7 +47,7 @@ const views = Object.fromEntries(TOUR_SHOTS.map(shot => [shot.view, {
   position: [3, 0.8, 1], target: [0, 0.6, 0], fov: 50,
 }]))
 
-test('tour moves within shots, cuts at boundaries, loops, and honors reduced motion', () => {
+test('tour selects the expected shots, loops, and honors reduced motion', () => {
   const start = sampleViewTour(0, views)
   assert.notDeepEqual(sampleViewTour(3, views).position, start.position)
   assert.equal(sampleViewTour(5.99, views).index, 0)
@@ -67,4 +67,39 @@ test('camera adapts to vehicle dimensions and keeps enclosed cabin views under t
   assert.equal(open.position[0], 3.75)
   assert.ok(closed.position[1] < open.position[1])
   assert.deepEqual(sampleViewTour(0, views, { enclosed: true }), sampleViewTour(0, views))
+})
+
+test('exterior sweeps cover a quarter turn at steady angular speed', () => {
+  for (const index of [0, 1, 2, 6, 7, 10, 11]) {
+    const angle = offset => {
+      const { position } = sampleViewTour(index * 6 + offset, views)
+      return Math.atan2(position[2], position[0])
+    }
+    const delta = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a))
+    assert.ok(Math.abs(delta(angle(0), angle(5.999)) - Math.PI / 2) < 0.001)
+    for (const offset of [0, 1, 2, 3, 4]) {
+      assert.ok(Math.abs(delta(angle(offset), angle(offset + 1)) - Math.PI / 12) < 1e-8)
+    }
+  }
+})
+
+test('connected exterior sweeps and windshield pans share poses at their boundaries', () => {
+  for (const options of [{}, { lengthScale: 1.27, heightScale: 1.6, enclosed: true }]) {
+    for (const boundary of [6, 12, 24, 42, 48, 66, 72]) {
+      const before = sampleViewTour(boundary - 0.000001, views, options)
+      const after = sampleViewTour(boundary, views, options)
+      for (const field of ['position', 'target']) {
+        assert.ok(Math.hypot(...before[field].map((value, i) => value - after[field][i])) < 0.00001)
+      }
+      assert.ok(Math.abs(before.fov - after.fov) < 0.00001)
+    }
+  }
+})
+
+test('side hold raises the aim smoothly to place the vehicle lower and reveal the skyline', () => {
+  const start = sampleViewTour(48, views), middle = sampleViewTour(51, views), end = sampleViewTour(53.99, views)
+  assert.deepEqual(start.position, end.position)
+  assert.ok(start.target[1] < middle.target[1] && middle.target[1] < end.target[1])
+  assert.ok(end.target[1] - start.target[1] > 0.19)
+  assert.deepEqual(sampleViewTour(51, views, { reducedMotion: true }), start)
 })

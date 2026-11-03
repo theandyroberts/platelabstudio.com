@@ -105,8 +105,9 @@ ffmpeg -n -ss 50 -i "$MASTER" -frames:v 1 -vf scale=1920:-1 -q:v 2 -update 1 web
 
 **View tour**, beside the camera presets in both Lab builds, starts a repeating
 72-second sequence adapted from the homepage showreel. It uses the current clip
-and vehicle, with gentle camera moves within each shot and cuts into/out of the
-cabin. The vehicle's travel orientation is unchanged. The sequence is defined in
+and vehicle, with continuous quarter-turn exterior sweeps, a side-view skyline
+reveal, and cuts into/out of the cabin. The vehicle's travel orientation is
+unchanged. The sequence is defined in
 `viewer/src/view-tour.js`; the original hero is a prerecorded render, not a live
 camera track.
 
