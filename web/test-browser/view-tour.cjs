@@ -26,7 +26,10 @@ for (const [value,file] of [['ferrari',null],['bmwM5','bmw_m5.glb'],['escalade',
  for(let i=0;i<12;i++){
   await f.locator('#viewTour[data-shot="'+i+'"]').waitFor();
   assert.equal(await p.locator('[data-visible-view]').getAttribute('data-visible-view'),'stage');
-  if(process.env.TOUR_SCREENSHOTS)await f.locator('#stageCanvas').screenshot({path:process.env.TOUR_SCREENSHOTS+'/tour-'+value+'-'+i+'.png'});
+  // Capture each rendered shot even when no artifact directory was requested.
+  // This also keeps the canvas in the viewport after the vehicle picker scrolls.
+  const image=await f.locator('#stageCanvas').screenshot(process.env.TOUR_SCREENSHOTS?{path:process.env.TOUR_SCREENSHOTS+'/tour-'+value+'-'+i+'.png'}:{});
+  assert.ok(image.length>1000,'camera shot must render a nonempty canvas');
  }
  console.log(value,'all 12 shots rendered');
 }
