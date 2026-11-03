@@ -533,6 +533,7 @@ if (embedParams.get('sharedVideo') && window.parent !== window) {
 const video = sharedVideo || document.createElement('video')
 let embeddedActive = !sharedVideo
 let embeddedReady = false
+let lastFrameReport = Number.NEGATIVE_INFINITY
 let vehicleReady = false
 THREE.DefaultLoadingManager.onLoad = () => invalidateRender({reflection:true})
 video.loop = true
@@ -2517,7 +2518,7 @@ function renderFrame(now) {
   // A paused/shared video may already have decoded before VideoTexture was
   // created, so no new video-frame callback is guaranteed until playback.
   const decodedFrameReady = Boolean(activeVideoTexture && video.readyState >= 2 && !video.seeking)
-  if (shouldRender && decodedFrameReady && (video.paused || !embeddedReady)) activeVideoTexture.needsUpdate = true
+  if (shouldRender && decodedFrameReady) activeVideoTexture.needsUpdate = true
 
   if (state.reflections && decodedFrameReady) {
     if (reflectionInvalidated) environmentGate.reset()
@@ -2532,12 +2533,15 @@ function renderFrame(now) {
   }
 
   if (shouldRender) renderer.render(scene, camera)
-  if (sharedVideo && !embeddedReady && canPresentPreview({
+  if (sharedVideo && !renderer.getContext().isContextLost() && canPresentPreview({
     rendered: shouldRender, modelReady: vehicleReady, decodedFrameReady,
     lightingReady: !state.reflections || !reflectionInvalidated,
   })) {
     embeddedReady = true
-    window.parent.postMessage({type:'tpl-stage-ready'}, location.origin)
+    if (now-lastFrameReport>=250) {
+      lastFrameReport=now
+      window.parent.postMessage({type:'tpl-stage-frame',time:video.currentTime},location.origin)
+    }
   }
   renderInvalidated = false
 
@@ -2549,13 +2553,22 @@ function renderFrame(now) {
   })) scheduleRender()
 }
 
-// Warm once, then suspend hidden Lab rendering until the next view switch.
+// Periodic probes recover missed startup messages and stalled video-frame callbacks.
 window.addEventListener('message', event => {
-  if (!sharedVideo || event.origin !== location.origin || event.source !== window.parent || event.data?.type !== 'tpl-stage-active') return
+  if (!sharedVideo || event.origin !== location.origin || event.source !== window.parent || !['tpl-stage-active','tpl-stage-probe'].includes(event.data?.type)) return
+  if (window.parent.document.getElementById(embedParams.get('sharedVideo')) !== video) {
+    window.parent.postMessage({type:'tpl-stage-error'}, location.origin)
+    return
+  }
   embeddedActive = Boolean(event.data.active)
-  if (embeddedActive) { invalidateRender({reflection:true}); scheduleVideoFrameRender() }
+  if (embeddedActive || !embeddedReady) { invalidateRender(); scheduleVideoFrameRender() }
   else cancelVideoFrameRender()
 })
+renderer.domElement.addEventListener('webglcontextlost', () => {
+  embeddedReady=false
+  if(sharedVideo)window.parent.postMessage({type:'tpl-stage-error'},location.origin)
+})
+renderer.domElement.addEventListener('webglcontextrestored', () => invalidateRender({reflection:true}))
 if (sharedVideo) {
   document.addEventListener('pointerdown', () => window.parent.postMessage({type:'tpl-stage-interaction'}, location.origin))
   document.addEventListener('keydown', () => window.parent.postMessage({type:'tpl-stage-interaction'}, location.origin))

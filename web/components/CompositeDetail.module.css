@@ -120,3 +120,11 @@
 .autoSwitch span{padding:0 4px;line-height:16px}
 .fullLabButton{min-height:28px;padding:3px 10px;gap:6px;line-height:18px;border-color:#77866a88;background:#20261f;color:#d9dfd2;font-weight:500!important}
 .fullLabButton span{font-size:16px;line-height:18px}.fullLabButton:hover{background:#343c32}
+
+/* The live panoramic decoder stays visible while the 3D view initializes. */
+.stageLoading{background:transparent}
+.player[data-visible-view="panorama"] .panoramaLayer{display:grid;place-items:center}
+.player[data-visible-view="panorama"] .crop{width:100%;height:100%;aspect-ratio:auto}
+.player[data-visible-view="panorama"] .crop video,.player[data-visible-view="panorama"] .playerPoster{object-fit:cover;object-position:center top}
+.player[data-visible-view="panorama"] .crop video{width:100%;height:100%;aspect-ratio:auto}
+.player[data-full-frame="true"] .crop video,.player[data-full-frame="true"] .playerPoster{object-fit:contain;object-position:center}
