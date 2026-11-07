@@ -10,15 +10,16 @@ const server=http.createServer((req,res)=>{
  const request=http.request({hostname:upstream.hostname,port:upstream.port,path:req.url,method:req.method,headers:{...req.headers,host:upstream.host}},response=>{
   if(process.env.DEBUG_STREAM)console.log('RESPONSE',response.statusCode,req.url,response.headers['content-range']||'');
   res.writeHead(response.statusCode,response.headers);
-  const throttle=new Transform({transform(chunk,encoding,done){setTimeout(()=>{this.push(chunk);done()},chunk.length/750000*1000)}});
-  pipeline(...(/\.mp4(?:[?#]|$)/.test(req.url)?[response,throttle,res]:[response,res]),()=>{});
+  const started=performance.now();let bytes=0;
+  const throttle=new Transform({transform(chunk,encoding,done){bytes+=chunk.length;const delay=Math.max(0,started+bytes/750000*1000-performance.now());setTimeout(()=>{this.push(chunk);done()},delay)}});
+  pipeline(...(/\.mp4(?:[?#]|$)/.test(req.url)?[response,throttle,res]:[response,res]),error=>{if(process.env.DEBUG_STREAM&&/\.mp4/.test(req.url))console.log('STREAM END',bytes,Math.round(performance.now()-started),error?.code||'complete')});
  });
  request.on('error',()=>{if(!res.headersSent)res.writeHead(502);res.end()});
  res.on('close',()=>request.destroy());req.pipe(request);
 });
 (async()=>{await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  const engine=engines[process.env.ENGINE||'webkit'];
- const b=await engine.launch({headless:true,...(engine===engines.chromium?{...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chrome'}),args:['--enable-unsafe-swiftshader']}:{} )});
+ const b=await engine.launch({headless:true,...(engine===engines.chromium?{...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chrome'}),args:[...(process.platform==='darwin'?['--enable-gpu','--use-angle=metal']:[]),'--enable-unsafe-swiftshader']}:{} )});
  try{const page=await b.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(60000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
  for(const path of (process.env.TEST_PATHS?process.env.TEST_PATHS.split(','):['/','/plate/PL-1630021','/plate/PL-3561787'])){
   await page.goto('http://127.0.0.1:'+server.address().port+path,{waitUntil:'domcontentloaded'});

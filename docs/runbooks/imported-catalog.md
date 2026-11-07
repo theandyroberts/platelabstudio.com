@@ -65,7 +65,8 @@ ENGINE=webkit TEST_BASE=http://127.0.0.1:3000 \
 This tests the hero and two detail plates, including the short clip looping,
 through a streaming HTTP proxy capped at 6 Mbps. It checks sustained playback and
 that decoded frames continue appearing in the panoramic player. Lab startup keeps the live panorama visible until
-three completed render acknowledgements arrive less than a second apart, with
+three completed render acknowledgements arrive less than a second apart during
+playback (one completed render is sufficient for a paused still), with
 a 20-second startup budget before falling back to panorama. The existing
 1.5-second running-render watchdog still detects stalled Lab output. Also run `web/test-browser/composite-playback.cjs` for
 media failure and retry behavior. The staging password gate remains in place.

@@ -113,8 +113,9 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
           const now=performance.now();
           lastStageFrame.current=now;
           // Safari can deliver one frame before shader compilation stalls the
-          // next render. Keep the live panorama until three steady frames arrive.
-          if(!stageReadyRef.current){
+          // next render. During playback, keep the live panorama until three
+          // steady frames arrive. A paused clip only needs its completed still.
+          if(!stageReadyRef.current&&!media.paused){
             const previous=stageWarmup.current;
             const frames=previous.last&&now-previous.last<=1000?previous.frames+1:1;
             stageWarmup.current={frames,last:now};

@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
 (async()=>{
- const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chrome'}),args:['--enable-unsafe-swiftshader']});
+ const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chrome'}),args:[...(process.platform==='darwin'?['--enable-gpu','--use-angle=metal']:[]),'--enable-unsafe-swiftshader']});
  try{
   async function page(){const p=await browser.newPage({viewport:{width:1500,height:1050}});p.setDefaultTimeout(30000);return p;}
   async function open(p){await p.goto(base+'/plate/PL-1630021',{waitUntil:'domcontentloaded',timeout:60000});}
