@@ -25,10 +25,10 @@ export function HomeShowreel() {
     <section className={styles.showreel} aria-label="Plate Lab showreel">
       <video
         ref={video}
-        src="/media/site/mustang-study14-reflections-4k.mp4"
+        src="/media/site/mustang-study14-reflections-browser-v1.mp4"
         poster="/media/site/mustang-study14-reflections-poster.jpg"
-        width={3840}
-        height={2160}
+        width={1920}
+        height={1080}
         autoPlay
         muted
         loop

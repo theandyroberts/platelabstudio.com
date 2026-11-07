@@ -77,8 +77,8 @@ No admin or service-role key is required to browse published clips.
 
 ### Homepage showreel
 
-The full homepage plays `/media/site/mustang-study14-reflections-4k.mp4` muted, inline and on
-repeat above the existing hero. Its poster is
+The full homepage plays `/media/site/mustang-study14-reflections-browser-v1.mp4`
+(1920×1080, capped at 4 Mbps), muted, inline and on repeat above the existing hero. Its poster is
 `/media/site/mustang-study14-reflections-poster.jpg`. Both are runtime assets under
 `web/public/media/site/`, not Git assets. Provision them into the staging media
 mount before deploying the homepage change. The public coming-soon page is

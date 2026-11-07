@@ -4,10 +4,10 @@ const assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
 (async()=>{
- const browser=await chromium.launch({headless:true,channel:'chrome',args:['--enable-unsafe-swiftshader']});
+ const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{channel:'chrome'}),args:['--enable-unsafe-swiftshader']});
  try{
   async function page(){const p=await browser.newPage({viewport:{width:1500,height:1050}});p.setDefaultTimeout(30000);return p;}
-  async function open(p){await p.goto(base+'/plate/PL-1630021',{waitUntil:'load'});}
+  async function open(p){await p.goto(base+'/plate/PL-1630021',{waitUntil:'domcontentloaded',timeout:60000});}
   async function play(p){await p.getByRole('button',{name:'Play composite',exact:true}).last().click();await p.waitForFunction(()=>document.querySelector('video[id^="composite-video-"]')?.currentTime>0.3);}
   async function visiblePanorama(p){
     assert.equal(await p.locator('[data-visible-view]').getAttribute('data-visible-view'),'panorama');
@@ -16,7 +16,7 @@ const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
   }
   const blocked=await page();await blocked.route('**/imported-stage/**',route=>route.abort());await open(blocked);
   await play(blocked);await visiblePanorama(blocked);
-  await blocked.waitForFunction(()=>document.querySelector('[data-preview-mode]')?.dataset.previewMode==='panorama',{},{timeout:15000});
+  await blocked.waitForFunction(()=>document.querySelector('[data-preview-mode]')?.dataset.previewMode==='panorama',{},{timeout:25000});
   assert.equal(await blocked.getByText('Loading Lab 360 · panoramic preview available',{exact:true}).count(),0);
   console.log('PASS blocked Lab: moving panorama is visible, initialization times out safely');await blocked.close();
 

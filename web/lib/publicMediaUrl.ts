@@ -1,4 +1,5 @@
 import { isStagingHostname } from "@/lib/siteHosts";
+import { browserPreviewUrl } from "./browserPreview";
 
 const PREVIEW_BUCKET = "plate-previews";
 
@@ -16,6 +17,7 @@ export function publicMediaUrl(
     mediaBaseUrl: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
   },
 ): string {
+  assetUrl = browserPreviewUrl(assetUrl);
   if (!assetUrl.startsWith("/media/")) return assetUrl;
 
   try {

@@ -2,11 +2,13 @@
 import {type ReactNode,forwardRef,useEffect,useImperativeHandle,useRef,useState} from 'react';
 import {stitchStatus,type StitchStatus as Status} from '@platelab/shared';
 import {StitchStatus} from './StitchStatus';
+import {browserPreviewUrl} from '@/lib/browserPreview';
 import styles from './CompositeDetail.module.css';
 
 export type CompositePlayerHandle={seek:(time:number)=>void};
 type Props={fullLabTelemetry?:ReactNode;stitchStatus?:Status;id:string;title:string;videoURL:string;stageBase:string;posterURL:string;start:number;duration:number;fps:number;sourceTimecode:string;coverageBottom:number;onTimeChange:(time:number)=>void};
 const AUTO_SWITCH_SECONDS=10;
+const STAGE_STARTUP_TIMEOUT_MS=20000;
 const clock=(time:number)=>`${Math.floor(time/60).toString().padStart(2,'0')}:${Math.floor(time%60).toString().padStart(2,'0')}`;
 
 // SVG shapes avoid platform emoji substitution for playback symbols.
@@ -14,24 +16,26 @@ function PlayIcon(){return <svg viewBox="0 0 24 24" width="24" height="24" aria-
 function PauseIcon(){return <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>;}
 
 export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function CompositePlayer(props,ref){
+  const playbackURL=browserPreviewUrl(props.videoURL);
   const video=useRef<HTMLVideoElement>(null),iframe=useRef<HTMLIFrameElement>(null),shell=useRef<HTMLDivElement>(null);
   const [mode,setMode]=useState<'panorama'|'stage'>('stage'),[playing,setPlaying]=useState(false),[ready,setReady]=useState(false),[stageReady,setStageReady]=useState(false),[auto,setAuto]=useState(false),[error,setError]=useState(''),[stageError,setStageError]=useState(''),[current,setCurrent]=useState(props.start),[expanded,setExpanded]=useState(false),[telemetryOpen,setTelemetryOpen]=useState(false),[fullFrame,setFullFrame]=useState(false),[stageAttempt,setStageAttempt]=useState(0);
   const modeRef=useRef(mode),stageReadyRef=useRef(false),lastStageFrame=useRef(0);
+  const stageWarmup=useRef({frames:0,last:0});
   modeRef.current=mode;
   const showStage=mode==='stage'&&stageReady&&!error;
   const expandButton=useRef<HTMLButtonElement>(null),closeButton=useRef<HTMLButtonElement>(null);
   const targetTime=useRef(props.start),playPromise=useRef<Promise<void>|null>(null),playIntent=useRef(false),hoverPaused=useRef(false);
   const videoId=`composite-video-${props.id}`;
   // Stable for this clip: changing views or the playhead never reloads the iframe.
-  const [stageURL]=useState(()=>`${props.stageBase}/index.html?${new URLSearchParams({video:props.videoURL,label:props.title,fps:String(props.fps),sourceTimecode:props.sourceTimecode,coverageBottom:String(props.coverageBottom),stitchStatus:stitchStatus(props.stitchStatus),embed:'1',preview:'1',sharedVideo:videoId})}`);
+  const [stageURL]=useState(()=>`${props.stageBase}/index.html?${new URLSearchParams({video:playbackURL,label:props.title,fps:String(props.fps),sourceTimecode:props.sourceTimecode,coverageBottom:String(props.coverageBottom),stitchStatus:stitchStatus(props.stitchStatus),embed:'1',preview:'1',sharedVideo:videoId})}`);
   const seek=(time:number)=>{targetTime.current=time;setCurrent(time);props.onTimeChange(time);if(video.current&&video.current.readyState>=1)video.current.currentTime=time;};
   useImperativeHandle(ref,()=>({seek}));
   function pause(){playIntent.current=false;hoverPaused.current=true;video.current?.pause();setPlaying(false);}
   function unavailableStage(message='Lab 360 is unavailable. Showing panoramic footage.'){
-    stageReadyRef.current=false;setStageReady(false);setStageError(message);setAuto(false);setMode('panorama');
+    stageReadyRef.current=false;stageWarmup.current={frames:0,last:0};setStageReady(false);setStageError(message);setAuto(false);setMode('panorama');
   }
   function mediaFailed(){
-    pause();setReady(false);setAuto(false);stageReadyRef.current=false;setStageReady(false);
+    pause();setReady(false);setAuto(false);stageReadyRef.current=false;stageWarmup.current={frames:0,last:0};setStageReady(false);
     setError('Footage could not load. Playback is paused. Click Play to retry.');
   }
   async function startPlayback(){
@@ -60,7 +64,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
   function chooseMode(next:'panorama'|'stage'){
     setAuto(false);
     if(next==='stage'&&stageError){
-      stageReadyRef.current=false;setStageReady(false);setStageError('');lastStageFrame.current=0;setStageAttempt(value=>value+1);
+      stageReadyRef.current=false;stageWarmup.current={frames:0,last:0};setStageReady(false);setStageError('');lastStageFrame.current=0;setStageAttempt(value=>value+1);
     }
     setMode(next);
     if(next==='panorama')void startPlayback();
@@ -106,8 +110,17 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
       if(event.data?.type==='tpl-stage-frame'&&Number.isFinite(event.data.time)){
         const media=video.current;
         if(media&&!media.error&&media.readyState>=2&&Math.abs(media.currentTime-event.data.time)<1){
-          lastStageFrame.current=performance.now();stageReadyRef.current=true;
-          setStageReady(true);setStageError('');
+          const now=performance.now();
+          lastStageFrame.current=now;
+          // Safari can deliver one frame before shader compilation stalls the
+          // next render. Keep the live panorama until three steady frames arrive.
+          if(!stageReadyRef.current){
+            const previous=stageWarmup.current;
+            const frames=previous.last&&now-previous.last<=1000?previous.frames+1:1;
+            stageWarmup.current={frames,last:now};
+            if(frames<3)return;
+          }
+          stageReadyRef.current=true;setStageReady(true);setStageError('');
           if(modeRef.current==='stage'){setCurrent(event.data.time);props.onTimeChange(event.data.time);}
         }
       }
@@ -125,7 +138,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
       iframe.current?.contentWindow?.postMessage({type:'tpl-stage-probe',active:modeRef.current==='stage'},location.origin);
       if(modeRef.current!=='stage')return;
       const now=performance.now();
-      if(!stageReadyRef.current&&now-started>8000)unavailableStage('Lab 360 is taking longer to load. Showing panoramic footage.');
+      if(!stageReadyRef.current&&now-started>STAGE_STARTUP_TIMEOUT_MS)unavailableStage('Lab 360 is taking longer to load. Showing panoramic footage.');
       else if(stageReadyRef.current&&lastStageFrame.current&&now-lastStageFrame.current>1500)unavailableStage('Lab 360 stopped updating. Showing panoramic footage.');
     };
     check();const timer=window.setInterval(check,500);
@@ -158,7 +171,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
         {!showStage&&<StitchStatus status={props.stitchStatus} overlay/>}
         <div className={`${styles.panoramaLayer} ${!showStage?styles.layerActive:''}`} aria-hidden={showStage} inert={showStage}>
           <div className={styles.crop}>
-            <video id={videoId} ref={video} src={props.videoURL} muted playsInline loop preload="auto" style={{opacity:ready?1:0}} onLoadedData={()=>setReady(true)} onSeeked={()=>setReady(true)} onTimeUpdate={event=>{if(modeRef.current==='stage'&&stageReadyRef.current)return;const time=event.currentTarget.currentTime;setCurrent(time);props.onTimeChange(time);}} onPlaying={()=>{setPlaying(true);setReady(true);setError('');}} onWaiting={()=>setPlaying(false)} onPause={()=>{setPlaying(false);playIntent.current=false;}} onError={mediaFailed} onClick={()=>void startPlayback()}/>
+            <video id={videoId} ref={video} src={playbackURL} muted playsInline loop preload="auto" style={{opacity:ready?1:0}} onLoadedData={()=>setReady(true)} onSeeked={()=>setReady(true)} onTimeUpdate={event=>{if(modeRef.current==='stage'&&stageReadyRef.current)return;const time=event.currentTarget.currentTime;setCurrent(time);props.onTimeChange(time);}} onPlaying={()=>{setPlaying(true);setReady(true);setError('');}} onWaiting={()=>setPlaying(false)} onPause={()=>{setPlaying(false);playIntent.current=false;}} onError={mediaFailed} onClick={()=>void startPlayback()}/>
             {!ready&&<img className={styles.playerPoster} src={props.posterURL} alt="Selected panoramic poster"/>}
             {!playing&&<button className={styles.bigPlay} onClick={()=>void startPlayback()} aria-label="Play composite"><PlayIcon/></button>}
           </div>
