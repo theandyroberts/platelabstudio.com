@@ -1,10 +1,10 @@
-.context, .pendingSave { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 16px 0; border-bottom: 1px solid var(--hairline); }
+.context, .pendingSave { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--hairline); }
 .context > button, .context > a { gap: 8px; }
 .context > :last-child { margin-left: auto; }
 .destination { display: grid; gap: 6px; min-width: 0; flex: 1; max-width: 440px; font-size: 12px; }
 .destination select { width: 100%; min-width: 0; color: var(--paper); background: var(--ink-2); border: 1px solid var(--hairline-strong); padding: 10px; font: inherit; }
 .pendingSave { align-items: center; }
-.drawer { position: fixed; inset: 0 0 0 auto; margin: 0; width: min(480px, 100%); height: 100dvh; max-height: 100dvh; max-width: 100%; padding: 0; border: 0; border-left: 1px solid var(--hairline-strong); color: var(--paper); background: var(--ink); }
+.drawer { position: fixed; inset: 0 0 0 auto; margin: 0; width: min(1060px, 94vw); height: 100dvh; max-height: 100dvh; max-width: 100%; padding: 0; border: 0; border-left: 1px solid var(--hairline-strong); color: var(--paper); background: var(--ink); }
 .drawer::backdrop { background: rgb(0 0 0 / 50%); }
 .drawerContent { padding: 24px; min-height: 100%; }
 .drawerHeader { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
@@ -21,7 +21,7 @@
 .clip p { font-size: 12px; margin-top: 6px; }
 .clipActions { grid-column: 1/-1; margin: 0; }
 .clipActions > * { font-size: 12px; padding: 8px 10px; }
-.empty, .feedback { color: var(--paper-60); padding: 16px 0; font-size: 13px; }
+.empty, .feedback { color: var(--paper-60); padding: 8px 0; font-size: 13px; }
 .error { color: #ffb4aa; padding: 12px 0; font-size: 13px; }
 .error button { text-decoration: underline; margin-left: 10px; }
 .drawer button:focus-visible, .context button:focus-visible, .destination select:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }

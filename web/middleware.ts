@@ -5,6 +5,7 @@ import {
   canonicalWebHostname,
   hostnameFromHost,
   isComingSoonHostname,
+  isLaunchAccountPath,
 } from "@/lib/siteHosts";
 
 export async function middleware(request: NextRequest) {
@@ -21,7 +22,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl, 308);
   }
 
-  if (isComingSoonHostname(hostname)) {
+  if (isComingSoonHostname(hostname) && !(process.env.AUTH_ACCOUNTS_ENABLED === "true" && isLaunchAccountPath(request.nextUrl.pathname))) {
     // The launch site stays independent of Supabase, including its direct URL.
     return request.nextUrl.pathname === "/coming-soon"
       ? NextResponse.next()
@@ -41,6 +42,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|auth-emails/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -1,5 +1,12 @@
 const FALLBACK_PATH = "/projects";
 
+// Account access can open before the public catalog launches.
+export function launchAccountRedirect(candidate: string | null | undefined): string {
+  const path = safeRedirectPath(candidate, "/account");
+  const pathname = new URL(path, "https://theplatelab.invalid").pathname;
+  return ["/account", "/reset-password"].includes(pathname) ? path : "/account";
+}
+
 export function safeRedirectPath(
   candidate: string | null | undefined,
   fallback = FALLBACK_PATH,

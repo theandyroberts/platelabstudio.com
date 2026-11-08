@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Confirm your Plate Lab account</title></head>
+<body style="margin:0;background:#111;color:#f5f3ed;font-family:Arial,sans-serif;padding:32px">
+  <h1 style="font-size:24px">Welcome to Plate Lab</h1>
+  <p>If you requested a login code, enter this on the sign-in screen:</p>
+  <p style="font-size:36px;letter-spacing:8px;font-weight:bold;color:#efad80">{{ .Token }}</p>
+  <p>If you created an account with a password, <a style="color:#efad80" href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email">confirm your email address</a>.</p>
+  <p>This code and link expire shortly and can be used once. Never share them.</p>
+  <p>If you didn’t request an account, you can ignore this email.</p>
+</body></html>

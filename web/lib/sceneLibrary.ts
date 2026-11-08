@@ -12,7 +12,7 @@ export async function readSceneLibrary(supabase: SupabaseClient<Database>, scene
   // The session client applies project membership / scene RLS to every read.
   const { data: rows, error } = await supabase.from("scenes")
     .select("id, project_id, name, search_brief, projects(name)")
-    .is("archived_at", null).order("created_at", { ascending: false });
+    .is("archived_at", null).order("project_id").order("sort_order").order("scene_number");
   if (error) return reply({ error: "Your scenes could not be loaded. Please retry." }, 503);
   const scenes = (rows ?? []).flatMap(row => {
     const project = Array.isArray(row.projects) ? row.projects[0] : row.projects;

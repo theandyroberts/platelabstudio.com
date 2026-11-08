@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { safeRedirectPath } from "@/lib/auth/redirect";
+import { getAuthRedirectPath } from "@/lib/auth/redirectServer";
 import { createClient } from "@/lib/supabase/server";
 import { signIn, signInWithGoogle, signUp } from "../actions";
 import { TestLogins } from "@/components/TestLogins";
+import { LoginMethods } from "@/components/LoginMethods";
+import { Logo } from "@/components/Logo";
+import { getSiteUrl } from "@/lib/auth/siteUrl";
+import { isComingSoonHostname } from "@/lib/siteHosts";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -16,8 +20,9 @@ type LoginPageProps = {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const next = safeRedirectPath(params.next);
+  const next = await getAuthRedirectPath(params.next);
   const isSignup = params.mode === "signup";
+  const launching = isComingSoonHostname(new URL(await getSiteUrl()).hostname);
   const googleEnabled =
     process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
   const supabase = await createClient();
@@ -31,10 +36,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="auth-shell">
       <div style={{ width: "min(100%, 520px)" }}>
       <section className="auth-card">
-        <p className="mono accent">Build your plate plan</p>
-        <h1>{isSignup ? "Start your first project" : "Welcome back"}</h1>
+        <Logo />
+        <p className="mono accent">{launching ? "Your Plate Lab account" : "Build your plate plan"}</p>
+        <h1>{isSignup ? "Create your account" : "Welcome back"}</h1>
         <p className="auth-intro">
-          {isSignup
+          {launching ? "Create an account or sign in ahead of the Plate Lab launch." : isSignup
             ? "Create a project, break down the scenes you need to shoot, then find the right environments for each one."
             : "Open your projects, scenes, selected clips, and THE LAB review setup."}
         </p>
@@ -55,11 +61,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </form>
 
             <div className="auth-divider">
-              <span>or continue with email</span>
+              <span>or use your email</span>
             </div>
           </>
         )}
 
+        <LoginMethods next={next} emailCode={process.env.AUTH_EMAIL_CODE_ENABLED === "true"} smsCode={false}>
         <form action={isSignup ? signUp : signIn} className="auth-form">
           <input type="hidden" name="next" value={next} />
           {isSignup && (
@@ -109,6 +116,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             {isSignup ? "Create account" : "Sign in"}
           </button>
         </form>
+        </LoginMethods>
 
         <div className="auth-links">
           {isSignup ? (
@@ -125,7 +133,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </Link>
             </>
           )}
-          <Link href="/">Return to the catalog</Link>
+          <Link href="/">{launching ? "Return to homepage" : "Return to the catalog"}</Link>
         </div>
       </section>
       <TestLogins next={next} />

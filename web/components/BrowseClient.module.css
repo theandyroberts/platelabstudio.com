@@ -55,7 +55,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 7px;
-  margin: -8px 0 20px;
+  margin: 0 0 10px;
 }
 
 .activeFilterChip {
@@ -71,7 +71,7 @@
 .activeFilterChip:hover { border-color: var(--orange); color: var(--orange); }
 
 .stageNote {
-  margin: -8px 0 20px;
+  margin: 0 0 10px;
   padding: 10px 12px;
   border-left: 2px solid var(--orange);
   background: color-mix(in srgb, var(--ink-2) 86%, transparent);
@@ -98,8 +98,8 @@
   gap: 16px;
   border: 1px solid var(--hairline-strong);
   border-left: 2px solid var(--orange);
-  margin-bottom: 22px;
-  padding: 12px 14px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
   color: var(--paper-60);
   font-size: 13px;
 }
@@ -186,16 +186,16 @@
   .spinner { animation: none; }
   .resultRegion { transition: none; }
 }
-.workspace { max-width: var(--max); margin-inline: auto; padding: 24px 32px 0; --paper-60: #d4d2cb; --paper-38: #bdbbb5; --hairline-strong: #68666a; }
+.workspace { max-width: var(--max); margin-inline: auto; padding: 12px 24px 0; --paper-60: #d4d2cb; --paper-38: #bdbbb5; --hairline-strong: #68666a; }
 /* Only the footage results extend beyond the centered search controls. */
 @media (min-width: 1320px) {
   .resultRegion { width: calc(100cqw - 2 * clamp(32px, 3cqw, 64px)); margin-left: calc((100% - 100cqw) / 2 + clamp(32px, 3cqw, 64px)); }
 }
 .workspace input::placeholder { color: #bdbbb5; opacity: 1; }
-.searchBar { display: flex; gap: 16px; align-items: center; margin: 28px 0; }
+.searchBar { display: flex; gap: 16px; align-items: center; margin: 12px 0; }
 .searchBar input { min-width: 0; flex: 1; font-size: 17px; }
 .searchBar > button { flex: none; gap: 8px; }
-.searchLayout { display: grid; grid-template-columns: minmax(0,1fr); gap: 32px; }
+.searchLayout { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
 .filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 24px 32px; padding: 24px; border: 1px solid var(--hairline-strong); background: var(--ink-3); }
 .filters > :global(.filter-group) { align-content: start; }
 .filters[hidden] { display: none; }
@@ -209,3 +209,5 @@
   .searchBar > button { padding: 10px; font-size: 12px; }
   .filters { grid-template-columns: minmax(0,1fr); }
 }
+
+.resultsHead { margin-bottom:10px; }

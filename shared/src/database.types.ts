@@ -953,6 +953,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_project_scene_grid: {
+        Args: { target_project_id: string | null; project_name: string; scene_rows: Json; expected_version?: number; organization_name?: string; display_name?: string }
+        Returns: Json
+      }
       add_clip_to_scene: {
         Args: { target_scene_id: string; target_stock_clip_id: string }
         Returns: string

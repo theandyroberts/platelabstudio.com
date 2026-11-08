@@ -39,6 +39,10 @@ export function isComingSoonHostname(hostname: string): boolean {
   return COMING_SOON_HOSTNAMES.has(hostname.toLowerCase());
 }
 
+export function isLaunchAccountPath(pathname: string): boolean {
+  return ["/login", "/forgot-password", "/reset-password", "/auth/callback", "/auth/confirm", "/account"].includes(pathname);
+}
+
 export function canonicalWebHostname(hostname: string): string | null {
   return LEGACY_WEB_HOST_REDIRECTS.get(hostname.toLowerCase()) ?? null;
 }

@@ -1,6 +1,7 @@
 import { ComingSoonGlobe } from "@/components/ComingSoonGlobe";
 import { Logo } from "@/components/Logo";
 import { MailingListForm } from "@/components/MailingListForm";
+import Link from "next/link";
 
 export function ComingSoon() {
   return (
@@ -9,6 +10,7 @@ export function ComingSoon() {
       <ComingSoonGlobe />
       <section className="coming-soon-content">
         <Logo />
+        {process.env.AUTH_ACCOUNTS_ENABLED === "true" && <Link className="launch-account-link mono" href="/login">Log in / Create account →</Link>}
         <div className="coming-soon-horizon" />
         <p className="mono accent">360×180 environments</p>
         <h1>

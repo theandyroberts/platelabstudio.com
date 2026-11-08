@@ -23,7 +23,7 @@ export default async function ProjectsPage() {
   const { data: projects, error } = await supabase
     .from("projects")
     .select(
-      "id, name, client_name, status, last_activity_at",
+      "id, name, status, last_activity_at",
     )
     .eq("status", "active")
     .order("last_activity_at", { ascending: false });
@@ -66,7 +66,6 @@ export default async function ProjectsPage() {
         <section className="project-list" aria-label="Your projects">
           <div className="project-list-head mono" aria-hidden="true">
             <span>Project</span>
-            <span>Client</span>
             <span>Scenes</span>
             <span>Updated</span>
             <span />
@@ -80,7 +79,6 @@ export default async function ProjectsPage() {
                 key={project.id}
               >
                 <strong>{project.name}</strong>
-                <span className="dim">{project.client_name || "—"}</span>
                 <span>{count}</span>
                 <span className="dim">
                   {projectDate(project.last_activity_at)}

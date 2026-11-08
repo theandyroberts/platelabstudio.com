@@ -39,10 +39,10 @@ test("save requests require a specific scene and a catalog SKU", () => {
   }
 });
 
-test("public scene entry uses universal search and no longer exposes script import", () => {
+test("scene entry opens its clip workspace and no longer exposes script import", () => {
   const source = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
   const scene = source("../app/projects/[projectId]/scenes/[sceneId]/page.tsx");
-  assert.match(scene, /redirect\(sceneSearchHref\(scene\)\)/);
+  assert.match(scene, /scenes\/\$\{sceneId\}\/clips/);
   assert.doesNotMatch(scene, /createQueryEmbedding|search_stock_clips|SceneKeywordPriorities/);
   for (const file of ["../app/projects/new/page.tsx", "../app/projects/[projectId]/page.tsx", "../components/SceneInputWorkspace.tsx"]) {
     assert.doesNotMatch(source(file), /SceneImportPanel|importPanel|Import scenes/);

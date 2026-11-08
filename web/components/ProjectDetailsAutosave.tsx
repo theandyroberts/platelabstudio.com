@@ -20,8 +20,7 @@ type ProjectDetailsAutosaveProps = {
   project: {
     id: string;
     name: string;
-    actualTitle: string;
-    clientName: string;
+
     dueDate: string;
     description: string;
   };
@@ -153,7 +152,7 @@ export function ProjectDetailsAutosave({
       <input type="hidden" name="projectId" value={project.id} />
       <div className="form-grid">
         <label>
-          <span>Working title or code name</span>
+          <span>Project name *</span>
           <input
             name="workingTitle"
             type="text"
@@ -162,28 +161,7 @@ export function ProjectDetailsAutosave({
             required
           />
         </label>
-        <label>
-          <span>
-            Actual production title <em>optional · private</em>
-          </span>
-          <input
-            name="actualTitle"
-            type="text"
-            defaultValue={project.actualTitle}
-            placeholder="Leave blank unless it is useful"
-            maxLength={200}
-            autoComplete="off"
-          />
-        </label>
-        <label>
-          <span>Client <em>optional</em></span>
-          <input
-            name="clientName"
-            type="text"
-            defaultValue={project.clientName}
-            maxLength={200}
-          />
-        </label>
+
         <label>
           <span>Needed by <em>optional</em></span>
           <input

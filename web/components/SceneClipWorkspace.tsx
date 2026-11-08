@@ -1,181 +1,36 @@
 "use client";
-import { stitchStatus } from "@platelab/shared";
-import { StitchStatus } from "./StitchStatus";
-
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Plate } from "@platelab/shared";
-import { publicMediaUrl } from "@/lib/publicMediaUrl";
-import {
-  sceneClipWorkspaceTab,
-  type SceneClipStatus,
-  type SceneClipWorkspaceTab,
-} from "@/lib/sceneClipWorkspace";
+import { applySceneClipChanges, isChosenClip, type SceneClipStatus } from "@/lib/sceneClipWorkspace";
+import { SceneClipCard } from "./SceneClipCard";
 import styles from "./SceneClipWorkspace.module.css";
-
-export type SceneClipWorkspaceCandidate = {
-  id: string;
-  status: SceneClipStatus;
-  version: number;
-  plate: Plate;
-  studioHref: string | null;
-  selectedDuration: string | null;
-};
-
-const TAB_LABELS: Record<SceneClipWorkspaceTab, string> = {
-  considering: "Saved",
-  selected: "In order",
-  rejected: "Dismissed",
-};
-
-export function SceneClipWorkspace({
-  initialCandidates,
-  initialTab = "considering",
-}: {
-  initialCandidates: SceneClipWorkspaceCandidate[];
-  initialTab?: SceneClipWorkspaceTab;
-}) {
+export type SceneClipWorkspaceCandidate = { id: string; status: SceneClipStatus; version: number; plate: Plate; studioHref: string | null; selectedDuration: string | null };
+export function SceneClipWorkspace({ initialCandidates }: { initialCandidates: SceneClipWorkspaceCandidate[] }) {
   const [candidates, setCandidates] = useState(initialCandidates);
-  const [activeTab, setActiveTab] = useState<SceneClipWorkspaceTab>(initialTab);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState({ message: "", tone: "" });
-  const counts = useMemo(() => {
-    const next = { considering: 0, selected: 0, rejected: 0 };
-    for (const candidate of candidates) next[sceneClipWorkspaceTab(candidate.status)] += 1;
-    return next;
-  }, [candidates]);
-  const visible = candidates.filter(
-    (candidate) => sceneClipWorkspaceTab(candidate.status) === activeTab,
-  );
-
-  async function updateStatus(candidate: SceneClipWorkspaceCandidate, status: SceneClipStatus) {
-    setPendingId(candidate.id);
-    setFeedback({ message: "Saving...", tone: "" });
+  const [pending, setPending] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
+  const visible = candidates.filter(clip => clip.status !== "rejected");
+  async function update(candidate: SceneClipWorkspaceCandidate, status: "considering" | "selected" | "rejected") {
+    setPending(true); setError(""); setFeedback("");
     try {
-      const response = await fetch(
-        `/api/scene-clips/${encodeURIComponent(candidate.id)}/status`,
-        {
-          method: "PATCH",
-          credentials: "same-origin",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ status, expectedVersion: candidate.version }),
-        },
-      );
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "The candidate could not be updated.");
-      window.dispatchEvent(new Event('platelab-order-updated'));
-      setCandidates((current) => current.map((item) =>
-        item.id === candidate.id
-          ? { ...item, status: result.status, version: result.version }
-          : item,
-      ));
-      setFeedback({
-        message: status === "rejected"
-          ? `${candidate.plate.sku} dismissed.`
-          : status === "selected" ? `${candidate.plate.sku} added to order.` : `${candidate.plate.sku} saved.`,
-        tone: "success",
-      });
-    } catch (error) {
-      setFeedback({
-        message: error instanceof Error ? error.message : "The candidate could not be updated.",
-        tone: "error",
-      });
-    } finally {
-      setPendingId(null);
-    }
+      const response = await fetch(`/api/scene-clips/${candidate.id}/status`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status, expectedVersion: candidate.version }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "The clip could not be updated.");
+      setCandidates(current => applySceneClipChanges(current, body.sceneClips));
+      window.dispatchEvent(new Event("platelab-order-updated"));
+      setFeedback(status === "selected" ? `${candidate.plate.sku} chosen for this scene and added to your order.` : status === "rejected" ? `${candidate.plate.sku} removed from this scene.` : "Choice cleared. Your clips are still saved.");
+      router.refresh();
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to save. Please retry."); }
+    finally { setPending(false); }
   }
-
-  return (
-    <div className={styles.workspace}>
-      <div className={styles.tabs} role="tablist" aria-label="Scene candidate status">
-        {(Object.keys(TAB_LABELS) as SceneClipWorkspaceTab[]).map((tab) => (
-          <button
-            key={tab}
-            className={styles.tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            aria-controls="scene-candidate-panel"
-            onClick={() => setActiveTab(tab)}
-          >
-            {TAB_LABELS[tab]} ({counts[tab]})
-          </button>
-        ))}
-      </div>
-      <p
-        className={styles.feedback}
-        role="status"
-        aria-live="polite"
-        data-tone={feedback.tone}
-      >
-        {feedback.message}
-      </p>
-      <div id="scene-candidate-panel" role="tabpanel" aria-label={TAB_LABELS[activeTab]}>
-        {visible.length ? (
-          <div className={styles.grid}>
-            {visible.map((candidate) => (
-              <article key={candidate.id} className={`${styles.card} stitch-surface`} data-stitch-status={stitchStatus(candidate.plate.stitchStatus)}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className={styles.poster}
-                  src={publicMediaUrl(candidate.plate.renditions.poster)}
-                  alt={`Preview of ${candidate.plate.title}`}
-                />
-                <div className={styles.body}>
-                  <StitchStatus status={candidate.plate.stitchStatus} />
-                  <p className="mono accent">{candidate.plate.sku}</p>
-                  <h2>{candidate.plate.title}</h2>
-                  <p className={styles.metadata}>
-                    {candidate.plate.location.city}, {candidate.plate.location.region} · {candidate.plate.timeOfDay}
-                  </p>
-                  {candidate.selectedDuration && (
-                    <p className={styles.metadata}>Saved range: {candidate.selectedDuration}</p>
-                  )}
-                  <div className={styles.actions}>
-                    <Link className={styles.action} href={`/plate/${candidate.plate.sku}`}>
-                      Plate details
-                    </Link>
-                    {candidate.studioHref && (
-                      <Link className={styles.action} href={candidate.studioHref}>
-                        Open in Studio
-                      </Link>
-                    )}
-                    {candidate.status === "rejected" ? (
-                      <button
-                        className={styles.undo}
-                        type="button"
-                        disabled={pendingId !== null}
-                        onClick={() => updateStatus(candidate, "considering")}
-                      >
-                        Restore clip
-                      </button>
-                    ) : (
-                      <>
-                      <button className={styles.action} type="button" disabled={pendingId !== null}
-                        onClick={() => updateStatus(candidate, candidate.status === "selected" || candidate.status === "submitted" ? "considering" : "selected")}>
-                        {candidate.status === "selected" || candidate.status === "submitted" ? "Remove from order" : "Add to order"}
-                      </button>
-                      <button
-                        className={styles.reject}
-                        type="button"
-                        disabled={pendingId !== null}
-                        onClick={() => updateStatus(candidate, "rejected")}
-                      >
-                        Dismiss
-                      </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.empty}>
-            <h2>No {TAB_LABELS[activeTab].toLowerCase()} clips</h2>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <div className={styles.workspace}>
+    <p className={styles.help}>{visible.length} clips · Choose one for this scene. You can change your choice anytime.</p>
+    {feedback && <p className={styles.feedback} role="status">{feedback}</p>}
+    {error && <p className={styles.error} role="alert">{error} <button onClick={() => window.location.reload()}>Refresh</button></p>}
+    <div className={styles.grid}>{visible.map(clip => <SceneClipCard key={clip.id} plate={clip.plate} studioHref={clip.studioHref} duration={clip.selectedDuration} chosen={isChosenClip(clip.status)} pending={pending} onChoose={() => update(clip, isChosenClip(clip.status) ? "considering" : "selected")} onRemove={() => update(clip, "rejected")} />)}</div>
+    {!visible.length && <p className={styles.empty}>No clips yet. Add clips from search to compare them here.</p>}
+  </div>;
 }

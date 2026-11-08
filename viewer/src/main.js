@@ -1238,6 +1238,7 @@ function loadVehicleSpec(vehicle) {
       vehicleReady = true
       vehicleLoading = false
       displayedVehicleKey = vehicleKey
+      try { localStorage.setItem('plateLabCurrentVehicle', vehicleKey) } catch { /* Optional scene default. */ }
       setPlaybackStatus(video.src ? 'Playing' : `${vehicle.label} loaded`)
       document.querySelector('#vehicleCredit').textContent = vehicle.credit
       invalidateRender()

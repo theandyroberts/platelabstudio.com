@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { safeRedirectPath } from "@/lib/auth/redirect";
+import { getAuthRedirectPath } from "@/lib/auth/redirectServer";
 import { getSiteUrl } from "@/lib/auth/siteUrl";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
@@ -34,8 +34,8 @@ function loginMessagePath(
 
 export async function signIn(formData: FormData) {
   const email = formString(formData, "email").toLowerCase();
-  const password = formString(formData, "password");
-  const next = safeRedirectPath(formString(formData, "next"));
+  const password = String(formData.get("password") ?? "");
+  const next = await getAuthRedirectPath(formString(formData, "next"));
 
   if (!email || !password) {
     redirect(
@@ -68,12 +68,9 @@ export async function signIn(formData: FormData) {
 export async function signUp(formData: FormData) {
   const displayName = formString(formData, "displayName");
   const email = formString(formData, "email").toLowerCase();
-  const password = formString(formData, "password");
-  const passwordConfirmation = formString(
-    formData,
-    "passwordConfirmation",
-  );
-  const next = safeRedirectPath(formString(formData, "next"));
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirmation = String(formData.get("passwordConfirmation") ?? "");
+  const next = await getAuthRedirectPath(formString(formData, "next"));
 
   if (!displayName || !email) {
     redirect(
@@ -142,7 +139,7 @@ export async function signUp(formData: FormData) {
 }
 
 export async function signInWithGoogle(formData: FormData) {
-  const next = safeRedirectPath(formString(formData, "next"));
+  const next = await getAuthRedirectPath(formString(formData, "next"));
   const supabase = await createClient();
   const siteUrl = await getSiteUrl();
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -150,7 +147,6 @@ export async function signInWithGoogle(formData: FormData) {
     options: {
       redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(next)}`,
       queryParams: {
-        access_type: "offline",
         prompt: "select_account",
       },
     },
@@ -209,8 +205,8 @@ export async function requestPasswordReset(formData: FormData) {
 }
 
 export async function updatePassword(formData: FormData) {
-  const password = formString(formData, "password");
-  const confirmation = formString(formData, "passwordConfirmation");
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("passwordConfirmation") ?? "");
 
   if (password.length < 12) {
     redirect(

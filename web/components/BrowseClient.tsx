@@ -94,6 +94,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
   const pendingSku = params.get("save");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const replaceParams = (next: URLSearchParams) => {
+    if (params.get("details") === "1") next.set("details", "1");
     window.history.replaceState(null, "", `/browse${next.size ? `?${next}` : ""}`);
   };
   const setPage = (nextPage: number) => replaceParams(sceneBrowseParams(browseParams({ filters, sort, page: nextPage }), sceneId, pendingSku));
@@ -215,6 +216,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
     sort,
     page: paginated.page,
   }), sceneId, pendingSku);
+  if (params.get("details") === "1") browseReturnParams.set("details", "1");
   const browseReturnPath = `/browse${
     browseReturnParams.size ? `?${browseReturnParams}` : ""
   }`;
@@ -249,7 +251,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
       <BrowseSceneTools state={sceneLibrary} sceneId={sceneId} pendingSku={pendingSku}
         onSceneChange={setSceneId} onPendingSave={setPendingSku}
         onSearchScene={scene => {
-          const next = new URLSearchParams({ q: scene.brief || scene.name, scene: scene.id });
+          const next = new URLSearchParams({ q: params.get("details") === "1" ? scene.name : scene.brief || scene.name, scene: scene.id });
           if (pendingSku) next.set("save", pendingSku);
           replaceParams(next);
         }} />
@@ -423,6 +425,9 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
                   key={p.sku}
                   plate={p}
                   browseReturnPath={browseReturnPath}
+                  onAdd={() => void sceneLibrary.save(p.sku)}
+                  saving={sceneLibrary.loading || sceneLibrary.pending}
+                  added={sceneLibrary.library?.clips.some(clip => clip.plate.sku === p.sku && clip.status !== "rejected")}
                 />
               ))}
             </div></div>

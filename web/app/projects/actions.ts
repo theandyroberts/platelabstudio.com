@@ -5,11 +5,6 @@ import {plateActionReturnPath} from "@/lib/plateActions";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
-  SceneImportError,
-  type SceneImportDocument,
-  parseSceneImportJson,
-} from "@/lib/sceneImport";
-import {
   analyzeSceneSearchBrief,
 } from "@/lib/sceneKeywords";
 import {
@@ -86,25 +81,6 @@ function scenePath(projectId: string, sceneId: string): string {
   return `/projects/${projectId}/scenes/${sceneId}`;
 }
 
-function sceneImportFromForm(
-  formData: FormData,
-  errorPath: string,
-): SceneImportDocument | null {
-  const source = formString(formData, "sceneImportJson");
-  if (!source) return null;
-
-  try {
-    return parseSceneImportJson(source);
-  } catch (error) {
-    formError(
-      errorPath,
-      error instanceof SceneImportError
-        ? error.message
-        : "The scene JSON could not be validated.",
-    );
-  }
-}
-
 async function analyzeScene(description: string): Promise<{
   keywords: string[];
   searchIntentSummary: string;
@@ -153,45 +129,25 @@ export async function createProject(formData: FormData) {
   const projectName =
     formString(formData, "workingTitle") ||
     formString(formData, "projectName");
-  const sceneImport = sceneImportFromForm(formData, "/projects/new");
-  const importedFirstScene = sceneImport?.scenes[0];
-  const firstSceneName =
-    importedFirstScene?.scene_name ??
-    formString(formData, "firstSceneName");
-  const searchBrief =
-    importedFirstScene?.description ??
-    formString(formData, "searchBrief");
-  const scriptSceneNumber =
-    importedFirstScene?.script_scene_number ??
-    formString(formData, "scriptSceneNumber");
-  const scriptPages =
-    importedFirstScene?.script_pages ??
-    formString(formData, "scriptPages");
+  const firstSceneName = formString(formData, "firstSceneName");
+  const searchBrief = "";
+  const scriptPages = formString(formData, "scriptPages");
   const intent = formString(formData, "intent");
 
-  if (!projectName || !firstSceneName) {
+  if (!projectName || projectName.length > 200 || !firstSceneName || firstSceneName.length > 200 || scriptPages.length > 80) {
     formError(
       "/projects/new",
-      "Give the project a working title and name the first scene.",
+      "Give the project a name and name the first scene.",
     );
   }
 
-  const sceneAnalysis = importedFirstScene
-    ? {
-        keywords: importedFirstScene.search_keywords,
-        searchIntentSummary: importedFirstScene.search_intent_summary,
-        productionMetadata: importedFirstScene.production_metadata,
-        status: "ready" as const,
-      }
-    : { keywords: [], searchIntentSummary: "", productionMetadata: EMPTY_SCENE_PRODUCTION_METADATA, status: "not_needed" as const };
+  const sceneAnalysis = { keywords: [], searchIntentSummary: "", productionMetadata: EMPTY_SCENE_PRODUCTION_METADATA, status: "not_needed" as const };
   const { data, error } = await supabase.rpc("start_project", {
     organization_name: organizationName,
     project_name: projectName,
     first_scene_name: firstSceneName,
     search_brief: searchBrief || undefined,
     display_name: formString(formData, "displayName") || undefined,
-    actual_title: formString(formData, "actualTitle") || undefined,
-    client_name: formString(formData, "clientName") || undefined,
   });
 
   const result = data?.[0];
@@ -206,12 +162,12 @@ export async function createProject(formData: FormData) {
     .from("scenes")
     .update({
       vehicle: formVehicle(formData),
-      script_scene_number: scriptSceneNumber || null,
+      script_scene_number: null,
       script_pages: scriptPages || null,
       generated_keywords: sceneAnalysis.keywords,
       search_intent_summary: sceneAnalysis.searchIntentSummary || null,
-      continuity_group: importedFirstScene?.continuity_group || null,
-      stage_use_type: importedFirstScene?.stage_use_type ?? "vehicle_process",
+      continuity_group: null,
+      stage_use_type: "vehicle_process",
       production_metadata: sceneAnalysis.productionMetadata,
       keyword_generation_status: sceneAnalysis.status,
       keywords_generated_at: sceneAnalysis.keywords.length
@@ -224,30 +180,6 @@ export async function createProject(formData: FormData) {
     formError(
       scenePath(result.project_id, result.scene_id),
       "The project was created, but its first scene metadata could not be saved.",
-    );
-  }
-
-  const remainingImportedScenes = sceneImport?.scenes.slice(1) ?? [];
-  if (remainingImportedScenes.length) {
-    const { error: importError } = await supabase.rpc(
-      "import_project_scenes",
-      {
-        target_project_id: result.project_id,
-        scene_payload: remainingImportedScenes,
-      },
-    );
-    if (importError) {
-      formError(
-        `/projects/${result.project_id}`,
-        "The project and first scene were created, but the remaining JSON scenes could not be imported.",
-      );
-    }
-  }
-
-  if (sceneImport) {
-    revalidatePath(`/projects/${result.project_id}`);
-    redirect(
-      `/projects/${result.project_id}?imported=${sceneImport.scenes.length}`,
     );
   }
 
@@ -289,16 +221,21 @@ async function persistProjectDetails(
   if (!projectId || !workingTitle) {
     return {
       ok: false,
-      error: "Give the project a working title or code name.",
+      error: "Give the project a name.",
     };
   }
 
+  // Preserve legacy data without exposing a separate client field in the UI.
+  const { data: existing, error: existingError } = await supabase.from("projects").select("client_name, actual_title").eq("id", projectId).maybeSingle();
+  if (existingError || !existing) {
+    return { ok: false, error: "The project details could not be loaded. Please try again." };
+  }
   const dueDate = formString(formData, "dueDate");
   const { error } = await supabase.rpc("update_project_details", {
     target_project_id: projectId,
     working_title: workingTitle,
-    actual_title: formString(formData, "actualTitle") || undefined,
-    client_name: formString(formData, "clientName") || undefined,
+    client_name: existing?.client_name || undefined,
+    actual_title: existing.actual_title || undefined,
     project_description:
       formString(formData, "projectDescription") || undefined,
     project_due_date: dueDate || undefined,
@@ -350,44 +287,6 @@ export async function updateProject(formData: FormData) {
   redirect(`${path}?updated=1`);
 }
 
-export async function importScenes(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const projectId = formString(formData, "projectId");
-  const path = `/projects/${projectId}`;
-
-  if (!user) {
-    redirect(`/login?next=${encodeURIComponent(path)}`);
-  }
-  if (!projectId) {
-    formError("/projects", "Choose a valid project.");
-  }
-
-  const sceneImport = sceneImportFromForm(formData, path);
-  if (!sceneImport) {
-    formError(path, "Choose a scene JSON file to import.");
-  }
-
-  const { data: importedCount, error } = await supabase.rpc(
-    "import_project_scenes",
-    {
-      target_project_id: projectId,
-      scene_payload: sceneImport.scenes,
-    },
-  );
-  if (error || importedCount !== sceneImport.scenes.length) {
-    formError(
-      path,
-      "The scene JSON could not be imported. No scenes were added.",
-    );
-  }
-
-  revalidatePath(path);
-  redirect(`${path}?imported=${importedCount}`);
-}
-
 export async function createScene(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -402,7 +301,7 @@ export async function createScene(formData: FormData) {
   }
 
   const sceneName = formString(formData, "sceneName");
-  if (!projectId || !sceneName) {
+  if (!projectId || !sceneName || sceneName.length > 200 || formString(formData, "scriptPages").length > 80) {
     formError(`/projects/${projectId}`, "Give the scene a name.");
   }
 
@@ -447,9 +346,8 @@ export async function createScene(formData: FormData) {
     );
   }
 
-  if (formString(formData, "intent") === "add-another" && !formString(formData, "saveSku")) {
-    redirect(`/projects/${projectId}?added=1#add-scene`);
-  }
+  revalidatePath(`/projects/${projectId}`);
+  if (!formString(formData, "saveSku")) redirect(`/projects/${projectId}?added=1#add-scene`);
   redirect(sceneSearchHref({ id: sceneId, name: sceneName, search_brief: searchBrief }, formString(formData, "saveSku") || undefined));
 }
 
@@ -460,10 +358,11 @@ export async function updateSceneBrief(formData: FormData) {
   const path = `/projects/${projectId}`;
   if (!user) redirect(`/login?next=${encodeURIComponent(path)}`);
   const name = formString(formData, "sceneName");
-  const brief = formString(formData, "searchBrief");
-  if (!name || name.length > 200 || brief.length > 10000) formError(path, "Enter a scene name and a description of up to 10,000 characters.");
+  const pages = formString(formData, "scriptPages");
+  if (!name || name.length > 200 || pages.length > 80) formError(path, "Enter a scene name and a page number of up to 80 characters.");
+  // Update only the visible fields. Existing briefs and production metadata are retained.
   const { data, error } = await supabase.from("scenes")
-    .update({ name, search_brief: brief || null })
+    .update({ name, script_pages: pages || null, vehicle: formVehicle(formData) })
     .eq("id", formString(formData, "sceneId")).eq("project_id", projectId)
     .is("archived_at", null).select("id").maybeSingle();
   if (error || !data) formError(path, "This scene could not be updated. Check your project access and retry.");
@@ -767,58 +666,25 @@ export async function addClipToScene(formData: FormData) {
   revalidatePath(scenePath(projectId, sceneId));
 }
 
-export async function updateSceneClipStatus(formData: FormData) {
+
+export async function saveProjectSceneGrid(input: {
+  projectId: string | null; name: string; version?: number; rows: unknown;
+  organizationName?: string; displayName?: string;
+}): Promise<{ok: true; projectId: string; version: number; rows: {key:string;id:string}[]} | {ok:false;error:string}> {
+  const { parseProjectSceneGrid } = await import('@/lib/projectSceneGrid');
+  let rows;
+  try { rows = parseProjectSceneGrid(input.rows); }
+  catch (error) { return {ok:false,error:error instanceof Error ? error.message : 'Check the scene fields.'}; }
+  if (!input.name?.trim() || input.name.trim().length > 200) return {ok:false,error:'Enter a project name of up to 200 characters.'};
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const projectId = formString(formData, "projectId");
-  const sceneId = formString(formData, "sceneId");
-  const sceneClipId = formString(formData, "sceneClipId");
-  const status = formString(formData, "status");
-  const expectedVersion = Number(formString(formData, "expectedVersion"));
-  const statuses = new Set([
-    "considering",
-    "shortlisted",
-    "selected",
-    "rejected",
-    "submitted",
-  ]);
-
-  if (!user) {
-    redirect(
-      `/login?next=${encodeURIComponent(
-        scenePath(projectId, sceneId),
-      )}`,
-    );
-  }
-  if (
-    !sceneClipId ||
-    !statuses.has(status) ||
-    !Number.isInteger(expectedVersion)
-  ) {
-    formError(
-      scenePath(projectId, sceneId),
-      "Refresh the scene and try that status change again.",
-    );
-  }
-
-  const { error } = await supabase.rpc("set_scene_clip_status", {
-    target_scene_clip_id: sceneClipId,
-    next_status: status as
-      | "considering"
-      | "shortlisted"
-      | "selected"
-      | "rejected"
-      | "submitted",
-    expected_version: expectedVersion,
+  const {data:{user}} = await supabase.auth.getUser();
+  if (!user) return {ok:false,error:'Your session expired. Sign in before saving.'};
+  const {data,error} = await supabase.rpc('save_project_scene_grid', {
+    target_project_id: input.projectId, project_name: input.name.trim(), scene_rows: rows,
+    expected_version: input.version, organization_name: input.organizationName, display_name: input.displayName,
   });
-  if (error) {
-    formError(
-      scenePath(projectId, sceneId),
-      "The clip changed in another session. Refresh and retry.",
-    );
-  }
-  revalidatePath(scenePath(projectId, sceneId));
-  revalidatePath(`/projects/${projectId}`);
+  if (error) return {ok:false,error:error.code==='40001' ? 'This project changed in another session. Reload before saving.' : 'The project could not be saved. Your edits are still here; please retry.'};
+  const saved=data as {projectId:string;version:number;rows:{key:string;id:string}[]};
+  revalidatePath('/projects'); revalidatePath(`/projects/${saved.projectId}`);
+  return {ok:true,...saved};
 }

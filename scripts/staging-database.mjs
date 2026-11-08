@@ -214,6 +214,14 @@ if (action === "apply") {
           ) as applied;
       `,
     },
+    {
+      path: "supabase/migrations/20261108010000_simplify_scene_choices.sql",
+      appliedSql: "select to_regclass('public.scene_clips_one_choice_per_scene') is not null as applied;",
+    },
+    {
+      path: "supabase/migrations/20261108020000_project_scene_grid.sql",
+      appliedSql: "select to_regprocedure('public.save_project_scene_grid(uuid,text,jsonb,integer,text,text)') is not null as applied;",
+    },
   ];
 
   for (const migration of migrations) {

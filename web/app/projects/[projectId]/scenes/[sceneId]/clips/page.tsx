@@ -5,6 +5,8 @@ import {
   SceneClipWorkspace,
   type SceneClipWorkspaceCandidate,
 } from "@/components/SceneClipWorkspace";
+import { sceneSearchHref } from "@/lib/sceneSearch";
+import { withCatalogPreview } from "@/lib/catalogPreview";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
 import { formatSceneClipSelectionDuration } from "@/lib/sceneClipSelection";
 import { buildStudioHref, type StudioSceneContext } from "@/lib/studioHref";
@@ -36,7 +38,7 @@ export default async function SceneClipWorkspacePage({
     supabase.from("projects").select("id, name").eq("id", projectId).maybeSingle(),
     supabase
       .from("scenes")
-      .select("id, project_id, name")
+      .select("id, project_id, name, search_brief")
       .eq("id", sceneId)
       .eq("project_id", projectId)
       .is("archived_at", null)
@@ -64,7 +66,7 @@ export default async function SceneClipWorkspacePage({
       ? row.stock_clips[0]
       : row.stock_clips;
     if (!relation) return [];
-    const plate = plateSchema.parse(relation.source_metadata);
+    const plate = withCatalogPreview(plateSchema.parse(relation.source_metadata));
     const studioHref = plate.stageCompat.includes("led-volume") && plate.renditions.stagePreview
       ? buildStudioHref({
           video: publicMediaUrl(plate.renditions.stagePreview),
@@ -99,18 +101,18 @@ export default async function SceneClipWorkspacePage({
     <main className="workspace-shell scene-workspace">
       <div className="scene-nav">
         <Link
-          href={`/projects/${project.id}/scenes/${scene.id}`}
+          href={`/projects/${project.id}`}
           className="mono dim back-link"
         >
-          ← {scene.name}
+          ← {project.name}
         </Link>
-        <Link href={`/projects/${project.id}`} className="secondary-button">
-          Project overview
+        <Link href={sceneSearchHref(scene)} className="primary-button">
+          + Add clips
         </Link>
       </div>
       <section className="scene-heading">
         <div>
-          <p className="mono accent">Saved clips</p>
+          <p className="mono accent">Scene clips</p>
           <h1>{scene.name}</h1>
         </div>
       </section>
@@ -120,7 +122,7 @@ export default async function SceneClipWorkspacePage({
           the scene and try again.
         </p>
       ) : (
-        <SceneClipWorkspace initialCandidates={candidates} initialTab={tab==="order"?"selected":"considering"} />
+        <SceneClipWorkspace initialCandidates={candidates} />
       )}
     </main>
   );

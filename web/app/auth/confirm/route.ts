@@ -1,7 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
-import { safeRedirectPath } from "@/lib/auth/redirect";
+import { getAuthRedirectPath } from "@/lib/auth/redirectServer";
 import { getSiteUrl } from "@/lib/auth/siteUrl";
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE } from "@/lib/admin/sessionCore";
 import { createClient } from "@/lib/supabase/server";
 
 const OTP_TYPES = new Set<EmailOtpType>([
@@ -21,7 +23,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
   const requestedNext = request.nextUrl.searchParams.get("next");
-  const next = safeRedirectPath(
+  const next = await getAuthRedirectPath(
     requestedNext ?? (type === "recovery" ? "/reset-password" : "/projects"),
   );
   const siteUrl = await getSiteUrl();
@@ -33,7 +35,10 @@ export async function GET(request: NextRequest) {
       type,
     });
 
-    if (!error) return NextResponse.redirect(new URL(next, siteUrl));
+    if (!error) {
+      (await cookies()).delete(ADMIN_COOKIE);
+      return NextResponse.redirect(new URL(next, siteUrl));
+    }
   }
 
   const loginUrl = new URL("/login", siteUrl);

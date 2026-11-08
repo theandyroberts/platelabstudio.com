@@ -1,6 +1,7 @@
 "use client";
-import { stitchStatus } from "@platelab/shared";
-import { StitchStatus } from "./StitchStatus";
+import { SceneClipCard } from "./SceneClipCard";
+import { applySceneClipChanges, isChosenClip } from "@/lib/sceneClipWorkspace";
+import clipStyles from "./SceneClipWorkspace.module.css";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -86,8 +87,8 @@ export function useBrowseSceneLibrary(sceneId: string, returnPath: string, onPen
       if (!response.ok) throw new Error(body.error || "The clip could not be updated.");
       window.dispatchEvent(new Event('platelab-order-updated'));
       if (activeScene.current !== targetScene) return;
-      setLibrary(current => current && ({ ...current, clips: current.clips.map(item => item.id === clip.id ? { ...item, ...body } : item) }));
-      setFeedback(status === "selected" ? `${clip.plate.sku} added to order.` : "Saved clips updated.");
+      setLibrary(current => current && ({ ...current, clips: applySceneClipChanges(current.clips, body.sceneClips) }));
+      setFeedback(status === "selected" ? `${clip.plate.sku} chosen for this scene.` : "Saved clips updated.");
     } catch (reason) {
       if (activeScene.current === targetScene) setError(reason instanceof Error ? reason.message : "The clip could not be updated.");
     } finally { setPending(false); }
@@ -108,11 +109,9 @@ type SceneToolsProps = {
 export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, onSearchScene, onPendingSave }: SceneToolsProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const scene = state.library?.scenes.find(item => item.id === sceneId);
-  const [tab, setTab] = useState<"saved" | "order" | "dismissed">("saved");
   const clips = state.library?.clips ?? [];
   const saved = clips.filter(clip => clip.status !== "rejected");
-  const orderClips = saved.filter(clip => clip.status === "selected" || clip.status === "submitted");
-  const visible = tab === "order" ? orderClips : tab === "dismissed" ? clips.filter(clip => clip.status === "rejected") : saved;
+  const visible = saved;
 
   useEffect(() => {
     if (state.open && !dialog.current?.open) dialog.current?.showModal();
@@ -122,6 +121,20 @@ export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, on
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
   }, [state.open]);
+
+  const clipCards = scene ? <>
+                {visible.map(clip => {
+                  const inOrder = clip.status === "selected" || clip.status === "submitted";
+                  const duration = formatSceneClipSelectionDuration(clip.inFrame, clip.outFrame, clip.plate.media.fps);
+                  const studioHref = clip.plate.renditions.stagePreview ? buildStudioHref({
+                    video: publicMediaUrl(clip.plate.renditions.stagePreview), label: `${clip.plate.sku} · ${clip.plate.title}`,
+                    fps: clip.plate.media.fps, sourceTimecode: clip.plate.media.timecode, sku: clip.plate.sku,
+                    scene: { projectId: scene.projectId, projectName: scene.projectName, sceneId: scene.id, sceneName: scene.name },
+                    selection: { sceneClipId: clip.id, version: clip.version, inFrame: clip.inFrame, outFrame: clip.outFrame },
+                  }) : null;
+                  return <SceneClipCard key={clip.id} plate={clip.plate} studioHref={studioHref} duration={duration} chosen={isChosenClip(clip.status)} pending={state.pending} onChoose={() => state.setStatus(clip, inOrder ? "considering" : "selected")} onRemove={() => state.setStatus(clip, "rejected")} />;
+                })}
+  </> : null;
 
   const selector = (id: string) => (
     <label className={styles.destination}>
@@ -155,7 +168,7 @@ export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, on
         <button title="Cancel saving clip" aria-label="Cancel saving clip" onClick={() => onPendingSave(null)}><X size={18} /></button>
       </div>}
       {!state.open && state.error && <p className={styles.error} role="alert">{state.error} <button onClick={state.retry}>Retry</button>{sceneId && <button onClick={() => onSceneChange("")}>Choose another scene</button>}</p>}
-      {!state.open && state.feedback && <p className={styles.feedback} role="status">{state.feedback}</p>}
+      {!state.open && state.feedback && <p className="sr-only" role="status">{state.feedback}</p>}
       <dialog ref={dialog} className={styles.drawer} aria-labelledby="saved-clips-heading" onClose={() => state.setOpen(false)} onClick={event => { if (event.target === dialog.current) state.setOpen(false); }}>
         <div className={styles.drawerContent}>
           <header className={styles.drawerHeader}>
@@ -170,33 +183,10 @@ export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, on
             </div>
             {pendingSku && <button className="primary-button" disabled={!scene || state.pending} onClick={() => state.save(pendingSku)}>Save {pendingSku} to scene</button>}
             {scene && <>
-              <div className={styles.tabs} role="tablist" aria-label="Saved clip views">
-                {(["saved", "order", "dismissed"] as const).map(value => <button key={value} role="tab" aria-selected={tab === value} aria-controls="saved-clip-list" onClick={() => setTab(value)}>{value === "saved" ? `Saved (${saved.length})` : value === "order" ? `In order (${orderClips.length})` : "Dismissed"}</button>)}
-              </div>
-              <div id="saved-clip-list" role="tabpanel" aria-label={tab}>
-                {!visible.length && <p className={styles.empty}>{tab === "order" ? "No clips in order." : tab === "dismissed" ? "No dismissed clips." : "No saved clips for this scene."}</p>}
-                {visible.map(clip => {
-                  const inOrder = clip.status === "selected" || clip.status === "submitted";
-                  const duration = formatSceneClipSelectionDuration(clip.inFrame, clip.outFrame, clip.plate.media.fps);
-                  const studioHref = clip.plate.renditions.stagePreview ? buildStudioHref({
-                    video: publicMediaUrl(clip.plate.renditions.stagePreview), label: `${clip.plate.sku} · ${clip.plate.title}`,
-                    fps: clip.plate.media.fps, sourceTimecode: clip.plate.media.timecode, sku: clip.plate.sku,
-                    scene: { projectId: scene.projectId, projectName: scene.projectName, sceneId: scene.id, sceneName: scene.name },
-                    selection: { sceneClipId: clip.id, version: clip.version, inFrame: clip.inFrame, outFrame: clip.outFrame },
-                  }) : null;
-                  return <article key={clip.id} className={`${styles.clip} stitch-surface`} data-stitch-status={stitchStatus(clip.plate.stitchStatus)}>
-                    <Link href={`/plate/${clip.plate.sku}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={publicMediaUrl(clip.plate.renditions.poster)} alt={clip.plate.title} loading="lazy" />
-                    </Link>
-                    <div><StitchStatus status={clip.plate.stitchStatus} /><span className="mono dim">{clip.plate.sku}</span><h3>{clip.plate.title}</h3>{duration && <p>Saved range: {duration}</p>}</div>
-                    <div className={styles.clipActions}>
-                      {studioHref && <Link className="secondary-button" href={studioHref}>Open in Studio</Link>}
-                      <button className={inOrder ? "secondary-button" : "primary-button"} disabled={state.pending} onClick={() => state.setStatus(clip, inOrder || clip.status === "rejected" ? "considering" : "selected")}>{inOrder ? "Remove from order" : clip.status === "rejected" ? "Restore clip" : "Add to order"}</button>
-                      {clip.status !== "rejected" && <button className="secondary-button" disabled={state.pending} onClick={() => state.setStatus(clip, "rejected")}>Dismiss</button>}
-                    </div>
-                  </article>;
-                })}
+              <p className={styles.feedback}>{saved.length} clips · Choose one for this scene.</p>
+              <div className={clipStyles.grid}>
+                {!visible.length && <p className={styles.empty}>No clips added to this scene yet.</p>}
+                {clipCards}
               </div>
             </>}
           </> : !state.error && <Link href={`/login?next=${encodeURIComponent(typeof window === "undefined" ? "/browse" : window.location.pathname + window.location.search)}`} className="primary-button">Sign in to save clips</Link>}

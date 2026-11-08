@@ -19,5 +19,5 @@ export default async function ScenePage({ params, searchParams }: {
   if (!scene) notFound();
   const { error } = await searchParams;
   if (error) redirect(`${sceneSearchHref(scene)}&error=${encodeURIComponent(error)}`);
-  redirect(sceneSearchHref(scene));
+  redirect(`/projects/${projectId}/scenes/${sceneId}/clips`);
 }

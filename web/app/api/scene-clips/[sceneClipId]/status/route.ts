@@ -55,30 +55,21 @@ export async function PATCH(
     return NextResponse.json({ error: "Sign in to update scene candidates." }, { status: 401 });
   }
 
-  const nextVersion = update.expectedVersion + 1;
-  const { data, error } = await supabase
-    .from("scene_clips")
-    .update({ status: update.status, version: nextVersion })
-    .eq("id", sceneClipId)
-    .eq("version", update.expectedVersion)
-    .select("status, version")
-    .maybeSingle();
-
+  const { data: version, error } = await supabase.rpc("set_scene_clip_status", {
+    target_scene_clip_id: sceneClipId, next_status: update.status, expected_version: update.expectedVersion,
+  });
   if (error) {
-    console.warn(`Scene candidate status update failed: ${error.message}`);
-    return NextResponse.json(
-      { error: "This candidate could not be updated. Confirm that you can edit the project and retry." },
-      { status: 403 },
-    );
+    const conflict = error.code === "40001" || error.code === "23505" || error.code === "40P01";
+    return NextResponse.json({ error: conflict
+      ? "This scene changed in another session. Refresh and try again."
+      : "This clip could not be updated. Check your project access and retry." }, { status: conflict ? 409 : 403 });
   }
-  if (!data) {
-    return NextResponse.json(
-      { error: "This candidate changed in another session. Refresh the workspace and retry." },
-      { status: 409 },
-    );
-  }
-
-  return NextResponse.json(data, {
+  const { data: clip } = await supabase.from("scene_clips").select("scene_id").eq("id", sceneClipId).maybeSingle();
+  const { data: sceneClips, error: readError } = clip
+    ? await supabase.from("scene_clips").select("id, status, version").eq("scene_id", clip.scene_id)
+    : { data: null, error: true };
+  if (readError) return NextResponse.json({ error: "Saved, but the scene could not be refreshed. Reload to see the current choice." }, { status: 503 });
+  return NextResponse.json({ status: update.status, version, sceneClips }, {
     headers: { "cache-control": "private, no-store" },
   });
 }

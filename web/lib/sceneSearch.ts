@@ -43,3 +43,9 @@ export function sceneBrowseParams(params: URLSearchParams, sceneId: string, save
   else next.delete("save");
   return next;
 }
+
+export function sceneDetailsHref(scene: { id: string; name: string }, saveSku?: string) {
+  const params = new URLSearchParams({ scene: scene.id, q: scene.name, details: "1" });
+  if (saveSku) params.set("save", saveSku);
+  return `/browse?${params}`;
+}

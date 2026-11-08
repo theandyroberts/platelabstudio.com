@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { Plate } from "@platelab/shared";
 import { stitchStatus, formatUsd } from "@platelab/shared";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
@@ -18,11 +18,15 @@ function formatDuration(sec: number): string {
 export function PlateCard({
   plate,
   browseReturnPath,
+  onAdd, added = false, saving = false,
 }: {
   plate: Plate;
   browseReturnPath?: string;
+  onAdd?: () => void; added?: boolean; saving?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewWanted = useRef(false);
+  const [playing, setPlaying] = useState(false);
   const detailHref = browseReturnPath
     ? `/plate/${plate.sku}?from=${encodeURIComponent(browseReturnPath)}`
     : `/plate/${plate.sku}`;
@@ -39,19 +43,22 @@ export function PlateCard({
   const start = () => {
     const v = videoRef.current;
     if (!v) return;
-    v.play().then(() => v.classList.add("playing")).catch(() => {});
+    previewWanted.current = true;
+    void v.play().then(() => { if (!previewWanted.current) v.pause(); }).catch(() => setPlaying(false));
   };
   const stop = () => {
     const v = videoRef.current;
     if (!v) return;
+    previewWanted.current = false;
     v.pause();
     v.currentTime = 0;
-    v.classList.remove("playing");
+    setPlaying(false);
   };
 
   return (
     <article
       data-stitch-status={stitchStatus(plate.stitchStatus)}
+      data-preview-playing={playing}
       className={`plate-card${plate.composite ? " plate-card-composite" : ""}`}
       onMouseEnter={start}
       onMouseLeave={stop}
@@ -68,33 +75,33 @@ export function PlateCard({
           />
           <video
             ref={videoRef}
+            className={playing ? "playing" : undefined}
+            onPlaying={() => { if (previewWanted.current) setPlaying(true); else videoRef.current?.pause(); }}
+            onPause={() => setPlaying(false)}
+            onWaiting={() => setPlaying(false)}
+            onError={() => setPlaying(false)}
             src={publicMediaUrl(plate.renditions.stitchedPreview)}
             muted
             loop
             playsInline
             preload="none"
           />
-          <span className="sku-chip mono">{plate.sku}</span>
+          <div className="plate-preview-heading">
+            <span className="sku-chip mono">{plate.sku}</span>
+            <h3 className="plate-preview-description" title={plate.title}>{plate.title}</h3>
+          </div>
           <span className="dur-chip mono">{formatDuration(plate.media.durationSec)}</span>
           <StitchStatus status={plate.stitchStatus} />
         </div>
       </Link>
       <div className="body">
-        <h3><Link href={detailHref}>{plate.title}</Link></h3>
         <div className="meta">
           <span className="mono dimmer">
             {plate.location.city}, {plate.location.region}
           </span>
           <span className="mono accent">{formatUsd(plate.pricing.totalUsd)}</span>
         </div>
-        <div className="badges">
-          <span className="badge">{plate.shotType}</span>
-          <span className="badge">{plate.timeOfDay}</span>
-          {plate.imu.collected && <span className="badge imu">IMU</span>}
-          {plate.stageCompat.includes("led-volume") && (
-            <span className="badge">LED Volume</span>
-          )}
-        </div>
+
       </div>
       <div className="plate-card-actions">
         {studioHref ? (
@@ -106,8 +113,8 @@ export function PlateCard({
             Lab preview pending
           </span>
         )}
-        <button type="button" className="plate-card-project mono" disabled title="Add to project will be available soon">
-          Add to project <span aria-hidden="true">+</span>
+        <button type="button" className="plate-card-project mono" data-added={added} disabled={!onAdd || added || saving} onClick={onAdd}>
+          {added ? "Added to scene" : "Add to project"} <span aria-hidden="true">{added ? "✓" : "+"}</span>
         </button>
       </div>
     </article>
