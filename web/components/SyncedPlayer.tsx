@@ -178,7 +178,8 @@ export function SyncedPlayer({ plate, stageHref }: { plate: Plate; stageHref?: s
               muted
               loop
               playsInline
-              preload="auto"
+              // Nine tiles: index only until played, so the master starts first.
+              preload="metadata"
               aria-label={`Camera ${id} · ${CAMERA_POSITIONS[id]}`}
               onClick={togglePlay}
             />

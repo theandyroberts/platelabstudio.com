@@ -530,7 +530,10 @@ let sharedVideo = null
 if (embedParams.get('sharedVideo') && window.parent !== window) {
   try {
     const candidate = window.parent.document.getElementById(embedParams.get('sharedVideo'))
-    if (candidate?.tagName === 'VIDEO' && new URL(candidate.src).href === new URL(embedParams.get('video'), location.href).href) sharedVideo = candidate
+    // The parent names its footage in data-shared-source: under adaptive
+    // streaming the element's own src is a MediaSource object URL, not the file.
+    const declared = candidate?.dataset.sharedSource || candidate?.src
+    if (candidate?.tagName === 'VIDEO' && declared && new URL(declared, window.parent.location.href).href === new URL(embedParams.get('video'), location.href).href) sharedVideo = candidate
   } catch { /* Cross-origin parents cannot lend media elements. */ }
 }
 const video = sharedVideo || document.createElement('video')

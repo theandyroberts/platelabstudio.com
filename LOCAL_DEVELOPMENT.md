@@ -34,7 +34,10 @@ sign-in buttons. Configuration is in ignored `web/.env.local`; never commit it.
 The server-side publishing service key is not copied into this local setup.
 
 Approved imported metadata snapshots and homepage showreel assets were copied
-from staging into ignored `web/public/media/` directories. Other previews use
+from staging into ignored `web/public/media/` directories. The showreel's
+adaptive ladder is built locally from the 4K master with
+`python3 scripts/build-browser-previews.py --manifest web/lib/browser-preview-clips.json --composite-root web/public/media/composite --site-root web/public/media/site --only hero`;
+restart a production (`next start`) server afterwards. Other previews use
 the configured staging storage URL and the existing composite-media proxy.
 
 ## Viewer and checks

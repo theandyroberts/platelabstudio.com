@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { isStaticAssetPath } from "@/lib/staticAssetPath";
 import {
   canonicalWebHostname,
   hostnameFromHost,
@@ -34,6 +35,13 @@ export async function middleware(request: NextRequest) {
   if (process.env.PLATELAB_COMPOSITE_REVIEW === "1" &&
       ["127.0.0.1", "localhost", "[::1]"].includes(hostname) &&
       ["/review", "/api/composite-review", "/api/composite-feedback", "/media/composite", "/stage"].some(prefix => request.nextUrl.pathname === prefix || request.nextUrl.pathname.startsWith(prefix + "/"))) {
+    return NextResponse.next();
+  }
+
+  // Host rules above still apply. Past them, public files need no session:
+  // refreshing it would put an Auth round trip in front of every video
+  // segment, model and viewer script a signed-in visitor requests.
+  if (isStaticAssetPath(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
 

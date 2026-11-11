@@ -1,18 +1,20 @@
 // ENGINE=webkit TEST_BASE=http://127.0.0.1:3000 PLAYWRIGHT_MODULE=/path/to/playwright node web/test-browser/streaming-preview.cjs
-// Streaming proxy caps each video response at 6 Mbps, preserving Safari's Range requests.
+// Streaming proxy caps each video response (6 Mbps by default), preserving Safari's Range requests.
+// RATE_MBPS=1.5 reproduces a marginal connection: the adaptive ladder must keep footage moving.
 const assert=require('node:assert/strict');
 const http=require('node:http');
 const {Transform,pipeline}=require('node:stream');
 const engines=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const upstream=new URL(process.env.TEST_BASE||'http://127.0.0.1:3000');
+const rateMbps=Number(process.env.RATE_MBPS||6),bytesPerSecond=rateMbps*125000;
 const server=http.createServer((req,res)=>{
  if(process.env.DEBUG_STREAM)console.log('REQUEST',req.url,req.headers.range||'');
  const request=http.request({hostname:upstream.hostname,port:upstream.port,path:req.url,method:req.method,headers:{...req.headers,host:upstream.host}},response=>{
   if(process.env.DEBUG_STREAM)console.log('RESPONSE',response.statusCode,req.url,response.headers['content-range']||'');
   res.writeHead(response.statusCode,response.headers);
   const started=performance.now();let bytes=0;
-  const throttle=new Transform({transform(chunk,encoding,done){bytes+=chunk.length;const delay=Math.max(0,started+bytes/750000*1000-performance.now());setTimeout(()=>{this.push(chunk);done()},delay)}});
-  pipeline(...(/\.mp4(?:[?#]|$)/.test(req.url)?[response,throttle,res]:[response,res]),error=>{if(process.env.DEBUG_STREAM&&/\.mp4/.test(req.url))console.log('STREAM END',bytes,Math.round(performance.now()-started),error?.code||'complete')});
+  const throttle=new Transform({transform(chunk,encoding,done){bytes+=chunk.length;const delay=Math.max(0,started+bytes/bytesPerSecond*1000-performance.now());setTimeout(()=>{this.push(chunk);done()},delay)}});
+  pipeline(...(/\.(?:mp4|m4s)(?:[?#]|$)/.test(req.url)?[response,throttle,res]:[response,res]),error=>{if(process.env.DEBUG_STREAM&&/\.(?:mp4|m4s)/.test(req.url))console.log('STREAM END',bytes,Math.round(performance.now()-started),error?.code||'complete')});
  });
  request.on('error',()=>{if(!res.headersSent)res.writeHead(502);res.end()});
  res.on('close',()=>request.destroy());req.pipe(request);
@@ -26,9 +28,15 @@ const server=http.createServer((req,res)=>{
   if(path!=='/')await page.getByRole('button',{name:'Panoramic view',exact:false}).click();
   const video=page.locator('video').first();await video.scrollIntoViewIfNeeded();
   await video.evaluate(v=>{v.testFrames=0;const count=()=>{v.testFrames++;v.requestVideoFrameCallback(count)};v.requestVideoFrameCallback(count)});
-  await video.evaluate(v=>{v.muted=true;v.defaultMuted=true;return v.play()});
+  // Footage starts by itself. A play() issued while the player falls back from
+  // a missing ladder to the single file is superseded by that load, not an error.
+  await video.evaluate(v=>{v.muted=true;v.defaultMuted=true;return v.play().catch(()=>{})});
+  await page.waitForFunction(()=>{const v=document.querySelector('video');return v&&!v.paused&&v.currentTime>0});
   await page.mouse.move(0,0);
-  const source=await video.getAttribute('src');assert.match(source,/browser-(?:preview|v1)|browser-v1/);
+  // Adaptive where a ladder is provisioned; otherwise the small progressive preview.
+  const delivery=await video.evaluate(v=>({mode:v.dataset.playback,source:v.currentSrc}));
+  assert.ok(['adaptive','native','progressive'].includes(delivery.mode),JSON.stringify(delivery));
+  if(delivery.mode==='progressive')assert.match(delivery.source,/browser-(?:preview|v1)|browser-v1/);
   const dimensions=await video.evaluate(v=>[v.videoWidth,v.videoHeight]);assert.ok(dimensions[0]<=2048);
   let previous=await video.evaluate(v=>v.currentTime),previousFrames=0;
   for(let i=0;i<6;i++){
@@ -43,7 +51,7 @@ const server=http.createServer((req,res)=>{
   if(path!=='/'){
    assert.equal(await page.locator('[data-visible-view]').getAttribute('data-visible-view'),'panorama');
   }
-  console.log('PASS 30 seconds continuous playback at 6 Mbps',path,dimensions);
+  console.log('PASS 30 seconds continuous playback at',rateMbps,'Mbps',path,delivery.mode,await video.evaluate(v=>[v.videoWidth,v.videoHeight]));
   if(process.env.CAPTURE_DIR)await page.screenshot({path:process.env.CAPTURE_DIR+'/'+(path==='/'?'hero':path.split('/').pop())+'.png'});
  }
  assert.deepEqual(errors,[]);

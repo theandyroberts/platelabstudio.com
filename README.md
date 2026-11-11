@@ -77,12 +77,18 @@ No admin or service-role key is required to browse published clips.
 
 ### Homepage showreel
 
-The full homepage plays `/media/site/mustang-study14-reflections-browser-v1.mp4`
-(1920×1080, capped at 4 Mbps), muted, inline and on repeat above the existing hero. Its poster is
-`/media/site/mustang-study14-reflections-poster.jpg`. Both are runtime assets under
-`web/public/media/site/`, not Git assets. Provision them into the staging media
-mount before deploying the homepage change. The public coming-soon page is
-unchanged.
+The full homepage plays the Study14 reel muted, inline and on repeat above the
+existing hero, while it is on screen. It is delivered as an adaptive bitrate
+ladder, `/media/site/mustang-study14-reflections-stream-v1/` (360p to 1080p),
+so it starts quickly and keeps playing on a slow connection; the single file
+`/media/site/mustang-study14-reflections-browser-v1.mp4` (1920×1080, capped at
+4 Mbps) is the fallback. Its poster is
+`/media/site/mustang-study14-reflections-poster.jpg`. All are runtime assets under
+`web/public/media/site/`, not Git assets, built from the 4K master by
+`scripts/build-browser-previews.py --only hero` (see the
+[imported catalog runbook](docs/runbooks/imported-catalog.md#browser-preview-derivatives)).
+Provision them into the staging media mount before the app starts. The public
+coming-soon page is unchanged.
 
 On the full homepage only, the reel begins at the top of the viewport behind a
 fixed header with an 80%-opaque background. Navigation remains fully opaque;

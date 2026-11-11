@@ -128,3 +128,6 @@
 .player[data-visible-view="panorama"] .crop video,.player[data-visible-view="panorama"] .playerPoster{object-fit:cover;object-position:center top}
 .player[data-visible-view="panorama"] .crop video{width:100%;height:100%;aspect-ratio:auto}
 .player[data-full-frame="true"] .crop video,.player[data-full-frame="true"] .playerPoster{object-fit:contain;object-position:center}
+.buffering{position:absolute;inset:0;pointer-events:none;opacity:0;animation:bufferingAppear .2s linear .6s forwards}
+.buffering>span{position:absolute;right:16px;bottom:16px;padding:8px 12px;border:1px solid #ffffff30;border-radius:4px;background:#10150fe8;color:#e3e3d5;font-size:12px}
+@keyframes bufferingAppear{to{opacity:1}}
