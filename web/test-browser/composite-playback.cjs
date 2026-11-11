@@ -24,7 +24,7 @@ const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
   const blocked=await page();await blocked.route('**/imported-stage/**',route=>route.abort());await open(blocked);
   await play(blocked);await visiblePanorama(blocked);
   // Lab is requested once footage is flowing, then given 20 seconds.
-  await blocked.waitForFunction(()=>document.querySelector('[data-preview-mode]')?.dataset.previewMode==='panorama',{},{timeout:40000});
+  await blocked.waitForFunction(()=>document.querySelector('[data-preview-mode]')?.dataset.previewMode==='panorama',{},{timeout:80000});
   assert.equal(await blocked.getByText('Loading Lab 360 · panoramic preview available',{exact:true}).count(),0);
   console.log('PASS blocked Lab: moving panorama is visible, initialization times out safely');await blocked.close();
 

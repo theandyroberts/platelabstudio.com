@@ -124,8 +124,10 @@ playback and that decoded frames continue appearing in the panoramic player. At
 single-file behavior the ladder replaces. Lab startup keeps the live panorama
 visible until three completed render acknowledgements arrive less than a second
 apart during playback (one completed render is sufficient for a paused still).
-Opened in the background, Lab has a 20-second startup budget before the player
-settles on the panorama; asked for by name it has 60 seconds. The 1.5-second
+Lab is reported as still loading after 20 seconds and has 60 seconds in all
+before the player settles on the panorama; footage plays throughout. The
+telemetry car model (the same file Lab needs) is not requested until Lab is up
+or has stood down, or 30 seconds after Lab was requested. The 1.5-second
 running-render watchdog still detects stalled Lab output, and ignores time in
 which the footage itself was waiting on the network. Also run
 `web/test-browser/composite-playback.cjs` for media failure and retry behavior.

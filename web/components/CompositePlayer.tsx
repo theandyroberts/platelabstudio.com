@@ -13,10 +13,13 @@ const AUTO_SWITCH_SECONDS=10;
 // Footage comes first. Lab 360 (a 3D scene of several megabytes) may use the
 // connection only once this much footage is in hand, or when it is asked for.
 const SETTLED_BUFFER_SECONDS=8;
-// Opened in the background, Lab 360 gives way to the panorama after this long.
+// Lab 360 is reported as still loading after this long...
 const STAGE_STARTUP_TIMEOUT_MS=20000;
-// Asked for by name, it is given longer; the panorama plays throughout.
+// ...and gives way to the panorama after this long. Footage plays throughout, so a slow
+// connection costs nothing by waiting; giving up earlier only wasted what had arrived.
 const STAGE_REQUESTED_TIMEOUT_MS=60000;
+// The telemetry car model waits for Lab 360 to start or stand down, but no longer than this.
+const EXTRAS_WAIT_MS=30000;
 const clock=(time:number)=>`${Math.floor(time/60).toString().padStart(2,'0')}:${Math.floor(time%60).toString().padStart(2,'0')}`;
 
 // SVG shapes avoid platform emoji substitution for playback symbols.
@@ -37,7 +40,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
   const showStage=mode==='stage'&&stageReady&&!error;
   const expandButton=useRef<HTMLButtonElement>(null),closeButton=useRef<HTMLButtonElement>(null);
   const targetTime=useRef(props.start),playPromise=useRef<Promise<void>|null>(null),playIntent=useRef(false),hoverPaused=useRef(false);
-  const userPaused=useRef(false),systemPause=useRef(false),inView=useRef(false),settled=useRef(false),labByName=useRef(false),automaticStart=useRef(false);
+  const userPaused=useRef(false),systemPause=useRef(false),inView=useRef(false),settled=useRef(false),extrasReleased=useRef(false),labByName=useRef(false),automaticStart=useRef(false);
   const videoId=`composite-video-${props.id}`;
   // Playback asked for before the source existed begins as soon as it is attached.
   const adaptive=useAdaptiveVideo(video,sources,{onSourceAttached:()=>{if(playIntent.current)void startPlayback(automaticStart.current);}});
@@ -56,7 +59,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
   }
   function resetStage(){stageReadyRef.current=false;stageWarmup.current={frames:0,last:0};setStageReady(false);setLabSlow(false);}
   function unavailableStage(message='Lab 360 is unavailable. Showing panoramic footage.'){
-    resetStage();labByName.current=false;setStageError(message);setAuto(false);setMode('panorama');
+    resetStage();labByName.current=false;setStageError(message);setAuto(false);setMode('panorama');releaseExtras();
   }
   function mediaFailed(){
     pause();setReady(false);setAuto(false);resetStage();
@@ -90,7 +93,10 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
     return playPromise.current;
   }
   // Footage is flowing (or deliberately idle): the rest of the page may load.
-  function settle(){if(settled.current)return;settled.current=true;setLabRequested(true);props.onSettled?.();}
+  function settle(){if(settled.current)return;settled.current=true;setLabRequested(true);}
+  // Lower-priority extras (the telemetry car model, the same file Lab 360 needs) load once Lab 360
+  // is up or has stood down, so the two never share a slow link.
+  function releaseExtras(){if(extrasReleased.current)return;extrasReleased.current=true;props.onSettled?.();}
   function checkSettled(){
     const media=video.current;if(!media||settled.current||media.readyState<2)return;
     if(media.paused){if(!playIntent.current)settle();return;}
@@ -163,6 +169,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
           stageReadyRef.current=true;setStageReady(true);setStageError('');setLabSlow(false);
           // The Lab's own download no longer shares the link with the footage.
           adaptive.current?.linkFreed();
+          releaseExtras();
           if(modeRef.current==='stage'){setCurrent(event.data.time);props.onTimeChange(event.data.time);}
         }
       }
@@ -187,7 +194,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
       lastCheck=now;
       if(!stageReadyRef.current){
         const waited=now-started;
-        if(waited>(labByName.current?STAGE_REQUESTED_TIMEOUT_MS:STAGE_STARTUP_TIMEOUT_MS))unavailableStage('Lab 360 is taking longer to load. Showing panoramic footage.');
+        if(waited>STAGE_REQUESTED_TIMEOUT_MS)unavailableStage('Lab 360 is taking longer to load. Showing panoramic footage.');
         else if(waited>STAGE_STARTUP_TIMEOUT_MS)setLabSlow(true);
       }
       else if(lastStageFrame.current&&now-lastStageFrame.current>1500)unavailableStage('Lab 360 stopped updating. Showing panoramic footage.');
@@ -195,6 +202,12 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
     check();const timer=window.setInterval(check,500);
     return()=>window.clearInterval(timer);
   },[stageAttempt,mode,labRequested]);
+  useEffect(()=>{
+    if(!labRequested)return;
+    const timer=window.setTimeout(releaseExtras,EXTRAS_WAIT_MS);
+    return()=>window.clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[labRequested]);
   useEffect(()=>{
     if(!auto||!playing||!stageReady)return;
     const timer=window.setInterval(()=>setMode(previous=>previous==='panorama'?'stage':'panorama'),AUTO_SWITCH_SECONDS*1000);
