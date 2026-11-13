@@ -17,13 +17,16 @@ function rotate(p:Vec,q:number[]):Vec{
 function project(p:Vec){return [110+dot(p,right)*39,99-dot(p,up)*39,dot(p,depth)];}
 const degrees=(n:number)=>`${Math.abs(n)<.05?'0.0':n.toFixed(1)}°`;
 
-export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,compact=false,panel=false,overlay=false,initialHeading}:{motionURL:string;time:number;videoId:string;stageBase?:string;compact?:boolean;panel?:boolean;overlay?:boolean;initialHeading?:number}){
+export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,compact=false,panel=false,overlay=false,deferModel=false,initialHeading}:{motionURL:string;time:number;videoId:string;stageBase?:string;compact?:boolean;panel?:boolean;overlay?:boolean;deferModel?:boolean;initialHeading?:number}){
   const northUp=Number.isFinite(initialHeading);
   const [track,setTrack]=useState<Track|null>(null),[status,setStatus]=useState('Loading IMU…'),[now,setNow]=useState(time);
   const host=useRef<HTMLElement>(null),canvas=useRef<HTMLCanvasElement>(null);
   const miniature=useRef<{setPose:(q:number[])=>void;dispose:()=>void}|null>(null),poseRef=useRef<number[]>([0,0,0,1]);
   const [modelReady,setModelReady]=useState(false);
   useEffect(()=>{
+    // The miniature (3D engine plus a 1.5 MB model) is decoration; the dial and
+    // readings work without it, so it never competes with footage for the link.
+    if(deferModel)return;
     let cancelled=false;setModelReady(false);
     const stageBase=stageOverride??(motionURL.split('/media/')[0]+'/stage');
     import('../../viewer/src/attitude-ferrari.js').then(({createAttitudeFerrari})=>{
@@ -32,11 +35,11 @@ export function VehicleAttitude({motionURL,time,videoId,stageBase:stageOverride,
       return model.ready.then(()=>{if(!cancelled){model.setPose(poseRef.current);setModelReady(true);}});
     }).catch(()=>{if(!cancelled){miniature.current?.dispose();miniature.current=null;setModelReady(false);}});
     return()=>{cancelled=true;miniature.current?.dispose();miniature.current=null;};
-  },[motionURL,stageOverride,northUp]);
+  },[motionURL,stageOverride,northUp,deferModel]);
   useEffect(()=>{setNow(time);},[time]);
   useEffect(()=>{
     const controller=new AbortController();setTrack(null);setStatus('Loading IMU…');
-    fetch(motionURL,{signal:controller.signal}).then(r=>{if(!r.ok)throw Error('Motion unavailable');return r.json();}).then(data=>{if(controller.signal.aborted)return;setTrack(buildImuTrack(data) as unknown as Track);setStatus('');}).catch(()=>{if(!controller.signal.aborted)setStatus('IMU unavailable');});
+    fetch(motionURL,{signal:controller.signal,priority:'low'}).then(r=>{if(!r.ok)throw Error('Motion unavailable');return r.json();}).then(data=>{if(controller.signal.aborted)return;setTrack(buildImuTrack(data) as unknown as Track);setStatus('');}).catch(()=>{if(!controller.signal.aborted)setStatus('IMU unavailable');});
     return()=>controller.abort();
   },[motionURL]);
   // Sample the very same video used by the panorama, Lab and route. No

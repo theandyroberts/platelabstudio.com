@@ -8,7 +8,14 @@ const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
  try{
   async function page(){const p=await browser.newPage({viewport:{width:1500,height:1050}});p.setDefaultTimeout(30000);return p;}
   async function open(p){await p.goto(base+'/plate/PL-1630021',{waitUntil:'domcontentloaded',timeout:60000});}
-  async function play(p){await p.getByRole('button',{name:'Play composite',exact:true}).last().click();await p.waitForFunction(()=>document.querySelector('video[id^="composite-video-"]')?.currentTime>0.3);}
+  // Footage starts by itself once the player is on screen. Press Play only if it
+  // has not after a moment: a click racing the automatic start would pause it.
+  async function play(p){
+    const moving=timeout=>p.waitForFunction(()=>document.querySelector('video[id^="composite-video-"]')?.currentTime>0.3,{},{timeout});
+    if(await moving(10000).then(()=>true,()=>false))return;
+    await p.getByRole('button',{name:'Play composite',exact:true}).last().click();await moving(30000);
+  }
+  const media=/\.(?:mp4|m4s|m3u8)(?:[?#]|$)/;
   async function visiblePanorama(p){
     assert.equal(await p.locator('[data-visible-view]').getAttribute('data-visible-view'),'panorama');
     const result=await p.locator('video[id^="composite-video-"]').evaluate(v=>({ready:v.readyState,opacity:getComputedStyle(v).opacity,parentHidden:v.closest('[aria-hidden]').getAttribute('aria-hidden')}));
@@ -16,7 +23,8 @@ const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
   }
   const blocked=await page();await blocked.route('**/imported-stage/**',route=>route.abort());await open(blocked);
   await play(blocked);await visiblePanorama(blocked);
-  await blocked.waitForFunction(()=>document.querySelector('[data-preview-mode]')?.dataset.previewMode==='panorama',{},{timeout:25000});
+  // Lab is requested once footage is flowing, then given 20 seconds.
+  await blocked.waitForFunction(()=>document.querySelector('[data-preview-mode]')?.dataset.previewMode==='panorama',{},{timeout:80000});
   assert.equal(await blocked.getByText('Loading Lab 360 · panoramic preview available',{exact:true}).count(),0);
   console.log('PASS blocked Lab: moving panorama is visible, initialization times out safely');await blocked.close();
 
@@ -43,10 +51,10 @@ const base=process.env.TEST_BASE||'http://127.0.0.1:3000';
   await health.waitForFunction(()=>{const v=document.querySelector('video[id^="composite-video-"]');return v&&!v.paused&&v.readyState>=2});
   await health.getByRole('alert').filter({hasText:/Footage could not load|Playback could not start/}).waitFor({state:'hidden'});console.log('PASS media failure pauses clock; explicit retry resumes');await health.close();
 
-  const failed=await page();await failed.route('**/*.mp4*',route=>route.abort());await open(failed);
+  const failed=await page();await failed.route(media,route=>route.abort());await open(failed);
   await failed.getByRole('alert').filter({hasText:/Footage could not load|Playback could not start/}).filter({hasText:'Playback is paused'}).waitFor();
   assert.equal(await failed.locator('video[id^="composite-video-"]').evaluate(v=>v.paused),true);
-  await failed.unroute('**/*.mp4*');await failed.getByRole('button',{name:'Play composite',exact:true}).last().click();
+  await failed.unroute(media);await failed.getByRole('button',{name:'Play composite',exact:true}).last().click();
   await failed.waitForFunction(()=>{const v=document.querySelector('video[id^="composite-video-"]');return v&&!v.paused&&v.currentTime>.3});
   await failed.getByRole('alert').filter({hasText:/Footage could not load|Playback could not start/}).waitFor({state:'hidden'});console.log('PASS failed media request recovers after retry');await failed.close();
  }finally{await browser.close();}

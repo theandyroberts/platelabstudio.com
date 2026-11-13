@@ -27,19 +27,31 @@ Validation: web tests, Next production build, rollback-only database trial and R
 
 ## Browser preview derivatives
 
-The hero and the 16 provisioned catalog clips use versioned H.264 browser
-previews capped at 4 Mbps. The hero is 1920×1080; composite previews retain their
-full equirectangular frame at 2048×1024. Frame rate, duration, watermarks and GPS/IMU
-timing are retained. Approved snapshots, originals and delivery metadata are
-unchanged. This avoids streaming 16–27 Mbps 4K files just to browse the catalog.
+Footage is delivered to browsers as an adaptive bitrate ladder: the player picks
+a rung from the connection it measures, starts on a small one so the first frame
+arrives quickly, and steps up or down segment by segment. A single 3-4 Mbps file
+cannot do that; on a 1.5 Mbps connection it stalls every few seconds.
+
+For the hero and each provisioned catalog clip the builder writes, beside the
+source and never replacing it:
+
+| Derivative | What | Used by |
+| --- | --- | --- |
+| `stream-v2/` (hero: `…-stream-v1/`) | H.264 ladder as two-second CMAF segments with HLS playlists. Hero: 360p, 540p, 720p, 1080p. Composite (full 2:1 frame): 384p, 512p, 640p, 768p, 1024p. | Homepage reel, detail player, Lab 360 (shared decoder) |
+| `browser-preview-v2.mp4` | One progressive file capped at 4 Mbps (hero 1920×1080, composite 2048×1024). | Fallback when a ladder is missing or streaming is unsupported; standalone Lab |
+| `card-preview-v2.mp4` | 768-pixel progressive file, about 0.2-0.45 Mbps. | Catalog-card hover |
+
+Frame rate, duration, watermarks and GPS/IMU timing are retained. Approved
+snapshots, originals and delivery metadata are unchanged.
 
 `web/lib/browser-preview-clips.json` is the explicit provisioned set. Unknown
-clips retain their original URL until a derivative is generated and verified.
-`browserPreviewUrl()` is shared by catalog cards and the detail player's single
-video decoder, including the Lab iframe. Do not map every future clip blindly.
+clips retain their original URL until derivatives are generated and verified.
+`web/lib/browserPreview.ts` maps a clip to its derivatives; the smallest rung
+names there (`360p`, `384p`) must match the builder's ladders. Do not map every
+future clip blindly.
 
 Before deploying a manifest update, run the non-destructive builder on the media
-host (two encoder threads; use `nice` on a shared host):
+host (two encoder threads by default; use `nice` on a shared host):
 
 ```sh
 python3 scripts/build-browser-previews.py \
@@ -48,25 +60,127 @@ python3 scripts/build-browser-previews.py \
   --site-root /srv/platelab-coolify/public-media/site
 ```
 
-The builder validates duration and atomically publishes each completed MP4 with
-its index at the front (`faststart`). It never replaces `composite.mp4` or the
-4K hero. Wait for `COMPLETE`, verify all manifest URLs return 206 for byte ranges
-(including Safari's `bytes=0-1` probe and a late-file range), then deploy the app.
-Copy the new hero derivative into `web/public/media/site/` for local development.
-Media files remain runtime assets, outside Git.
+`--only hero` or `--only <clip-id>` (repeatable) limits the run; `--threads` and
+`--preset` trade encode time for load on the host. Existing outputs are skipped,
+so a rerun only adds what is missing. Expect
+a few minutes per clip at the defaults.
 
-Browser regression (requires a running app and Playwright's WebKit installation):
+The builder validates duration and publishes each output atomically. It never
+replaces `composite.mp4` or the 4K hero. Wait for `COMPLETE`, verify a manifest
+clip's `stream-v2/master.m3u8` returns 200 and its `browser-preview-v2.mp4`
+returns 206 for byte ranges (including Safari's `bytes=0-1` probe and a
+late-file range), then deploy the app. Media files remain runtime assets,
+outside Git.
+
+Order and safety:
+
+- **Either order is safe.** If the app is deployed before a ladder exists, the
+  player finds no playlist and plays the progressive preview as before; a card
+  without its hover file falls back the same way. Nothing breaks; that clip just
+  does not adapt yet.
+- **The hero lives under the app's own `public/media/site/`.** `next start` only
+  serves public files that existed when it started, so provision the hero ladder
+  before the app starts, or restart the app afterwards. The same applies locally.
+  Composite media are served by nginx and need no restart.
+- **Versioned names are cached for a year** (`immutable`), by `web/next.config.mjs`
+  for the app's public files and by `team-review/nginx.conf` for composite
+  media. Never re-encode under an existing name: publish the next version (and bump
+  the names in `browserPreview.ts`) instead. Header rules in `next.config.mjs`
+  do not reach media proxied through the `/composite-review/media/` rewrite, so
+  staging depends on the nginx rule as well.
+- `NEXT_PUBLIC_ADAPTIVE_STREAMING=0` at build time serves single files only.
+
+Loading order on a detail page is deliberate: poster, then footage, then
+everything else. The panoramic view plays as soon as the player is on screen.
+Lab 360 (a 3D scene of roughly 2 MB) and the telemetry car model are not
+requested until eight seconds of footage are buffered, or until Lab 360 is asked
+for by name (its tab, Full Lab, or an "Open in Lab" link). The panorama keeps
+playing until Lab 360 has rendered steadily. While Lab 360 downloads it shares
+the link with the footage, so the player drops to a smaller rung; when Lab 360
+reports ready the player discards the throughput it measured meanwhile and
+re-measures on the next segment, instead of taking most of a minute to recover.
+
+Field diagnostics: in the browser console run
+`localStorage.setItem('tpl:video-debug', '1')` and reload. Every rung choice,
+segment, cache hit and fallback is logged with a `[tpl]` prefix, and the
+`<video>` element carries `data-playback`, `data-rung` and `data-throughput`.
+
+Browser regression (requires a running app and Playwright; `ENGINE=chromium`
+uses the installed Chrome, `ENGINE=webkit` needs Playwright's WebKit):
 
 ```sh
-ENGINE=webkit TEST_BASE=http://127.0.0.1:3000 \
+ENGINE=chromium TEST_BASE=http://127.0.0.1:3000 \
+  PLAYWRIGHT_MODULE=/path/to/playwright node web/test-browser/streaming-preview.cjs
+# A marginal connection. Pages whose ladder is provisioned must keep playing.
+ENGINE=chromium RATE_MBPS=1.5 TEST_PATHS=/,/plate/PL-3561787 TEST_BASE=http://127.0.0.1:3000 \
   PLAYWRIGHT_MODULE=/path/to/playwright node web/test-browser/streaming-preview.cjs
 ```
 
 This tests the hero and two detail plates, including the short clip looping,
-through a streaming HTTP proxy capped at 6 Mbps. It checks sustained playback and
-that decoded frames continue appearing in the panoramic player. Lab startup keeps the live panorama visible until
-three completed render acknowledgements arrive less than a second apart during
-playback (one completed render is sufficient for a paused still), with
-a 20-second startup budget before falling back to panorama. The existing
-1.5-second running-render watchdog still detects stalled Lab output. Also run `web/test-browser/composite-playback.cjs` for
-media failure and retry behavior. The staging password gate remains in place.
+through a streaming HTTP proxy capped at 6 Mbps by default. It checks sustained
+playback and that decoded frames continue appearing in the panoramic player. At
+`RATE_MBPS=1.5` a clip without a ladder is expected to stall: that is the
+single-file behavior the ladder replaces. Lab startup keeps the live panorama
+visible until three completed render acknowledgements arrive less than a second
+apart during playback (one completed render is sufficient for a paused still).
+Lab is reported as still loading after 20 seconds and has 60 seconds in all
+before the player settles on the panorama; footage plays throughout. The
+telemetry car model (the same file Lab needs) is not requested until Lab is up
+or has stood down, or 30 seconds after Lab was requested. The 1.5-second
+running-render watchdog still detects stalled Lab output, and ignores time in
+which the footage itself was waiting on the network. Also run
+`web/test-browser/composite-playback.cjs` for media failure and retry behavior.
+The staging password gate remains in place.
+
+
+## November 2026 re-stitch and Plate Lab watermark (derivatives v2)
+
+Fifteen plates received new Mistika stitches of the same takes, delivered clean
+(no crosshair watermark). They were matched to the published plates by start
+timecode and frame count against the archived source packages. Plate 0035 was
+not replaced: its new stitch covers only 233 of 440 frames.
+
+- The clean ProRes masters are kept off the server. A watermarked copy is made
+  by laying `scripts/build-watermark-layer.py`'s looping layer (small Plate Lab
+  marks that pop in and out on a grid, about the size and density of the Mistika
+  crosshairs) over the frame before encoding `composite.mp4`. Every derivative,
+  poster and evidence image is cut from that watermarked copy.
+- Four re-stitches start one to twenty frames later or end four frames earlier
+  than the published plate (0027, 0029, 0031, 0033). The first or last frame is
+  held so frame numbers, GPS/IMU mapping, label times and evidence times remain
+  valid without editing the approved snapshot. 0031 therefore holds its first
+  frame for 20 frames.
+- Labels, approvals and source fingerprints are unchanged: this is a
+  presentation swap of the same takes. Each replaced clip directory carries a
+  `footage-revision.json` recording the new source file, its SHA-256 and the
+  watermark seed and offset. Text written against the old footage (for example
+  "colored source crosshairs") was not edited.
+- The previous `composite.mp4`, poster and evidence images are kept in each
+  clip directory under `footage-v1/`, and the `*-v1` derivatives stay in place,
+  so rollback is: restore `footage-v1/` and deploy the commit before the v2
+  name change. Plate 0035's v2 names are hard links to its v1 files.
+
+## Plates published ahead of their GPS/IMU package
+
+Four re-stitched takes arrived without MMM telemetry (release
+`approved-imports-20261113`). `scripts/import-telemetry-pending.ts` builds the
+same clip record the ingest would, from the watermarked rendition and a
+labelling report, and marks it `telemetry: "pending"`:
+
+- The plate page hides the route map, elevation and vehicle-motion panels and
+  says the telemetry is to come; the catalog row has `imu.collected: false` and
+  no GPS.
+- Stock IDs are provisional (`…-TC<source timecode>`) until MMM assigns one.
+  Geography labels rest on visible signage only.
+- Labels were written in a Claude session from every one-second panorama and
+  four-second directional view (no API usage), validated against the ingest's
+  evidence rules, and approved on the owner's instruction. Observations refer
+  to whole evidence frames; no rectangle pass has run.
+- The script writes `clip.json`, the approved snapshot and `promote.sql` to a
+  local folder and applies nothing. Media goes to the composite media root,
+  snapshots to `public-media/imported-catalog/<release>/`, and the SQL is run
+  against the catalog database after the app that understands
+  `telemetry: "pending"` is deployed.
+
+When a telemetry package arrives, ingest the take normally under its MMM stock
+ID, move the SKU to the new record and retire the provisional one.

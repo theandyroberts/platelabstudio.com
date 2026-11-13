@@ -51,6 +51,7 @@ import {
 import { VEHICLE_PHYSICAL_LENGTHS_FT } from './vehicle-specs.js'
 import { orientVehicleModel } from './vehicle-orientation.js'
 import { createViewTour, sampleViewTour } from './view-tour.js'
+import { CAPTURE_HEIGHT, COVERAGE_EDGE_MARGIN, ROAD_DOME_RADIUS, ROAD_PLANE_RADIUS, coverageBottomFromPixels, refineCoverageBottom } from './road-ground.js'
 
 const FEET_TO_UNITS = FEET_TO_SCENE_UNITS
 const CAMERA_SENSOR_WIDTH_MM = 36
@@ -107,6 +108,7 @@ const presets = {
   },
 }
 
+// +X is forward and the driver sits at -Z (left-hand drive).
 const shotGroups = [
   {
     name: 'Wide',
@@ -130,8 +132,8 @@ const shotGroups = [
     name: 'Interior',
     shots: [
       { key: 'overShoulder', label: 'Over Shoulder', position: [-0.48, 0.76, 0.24], target: [0.9, 0.58, -0.14], fov: 58 },
-      { key: 'passengerToDriver', label: 'Passenger -> Driver', position: [0, 0.72, -0.32], target: [0, 0.58, 0.3], fov: 55 },
-      { key: 'driverToPassenger', label: 'Driver -> Passenger', position: [0, 0.72, 0.32], target: [0, 0.58, -0.3], fov: 55 },
+      { key: 'passengerToDriver', label: 'Passenger -> Driver', position: [0, 0.72, 0.32], target: [0, 0.58, -0.3], fov: 55 },
+      { key: 'driverToPassenger', label: 'Driver -> Passenger', position: [0, 0.72, -0.32], target: [0, 0.58, 0.3], fov: 55 },
       { key: 'sideWindow', label: 'Side Window', position: [0.1, 0.7, 1.25], target: [0.05, 0.52, 0], fov: 48 },
     ],
   },
@@ -146,6 +148,15 @@ const shotGroups = [
 ]
 
 const views = Object.fromEntries(shotGroups.flatMap((group) => group.shots.map((shot) => [shot.key, shot])))
+
+// Cabins differ too much between a convertible, a sedan and an SUV to scale
+// one set of seat positions. Each model places its own interior cameras where
+// its occupants' heads are; everything else is shared.
+function viewsForVehicle(vehicleKey) {
+  const cabinViews = vehicleModels[vehicleKey]?.cabinViews
+  if (!cabinViews) return views
+  return { ...views, ...Object.fromEntries(Object.entries(cabinViews).map(([key, placement]) => [key, { ...views[key], ...placement }])) }
+}
 
 const finishPresets = {
   black: { label: 'Black', color: '#14191d', metalness: 0.7, roughness: 0.16 },
@@ -175,6 +186,11 @@ const vehicleModels = {
     credit: 'BMW M5 sedan test model from Get3DModels/DreamCar.',
     targetLengthFt: VEHICLE_PHYSICAL_LENGTHS_FT.bmwM5,
     shadow: 'soft',
+    cabinViews: {
+      overShoulder: { position: [-0.3, 0.74, 0.15], target: [0.9, 0.6, -0.15] },
+      passengerToDriver: { position: [0.05, 0.7, 0.33], target: [0, 0.62, -0.3] },
+      driverToPassenger: { position: [0.05, 0.7, -0.33], target: [0, 0.62, 0.3] },
+    },
   },
   escalade: {
     label: 'Escalade SUV',
@@ -182,6 +198,11 @@ const vehicleModels = {
     credit: 'Cadillac Escalade ESV test model from Get3DModels/OUTPISTON.',
     targetLengthFt: VEHICLE_PHYSICAL_LENGTHS_FT.escalade,
     shadow: 'soft',
+    cabinViews: {
+      overShoulder: { position: [-0.35, 1, 0.15], target: [1.2, 0.9, -0.15] },
+      passengerToDriver: { position: [0.15, 0.98, 0.38], target: [0.12, 0.9, -0.35] },
+      driverToPassenger: { position: [0.15, 0.98, -0.38], target: [0.12, 0.9, 0.35] },
+    },
   },
 }
 
@@ -535,9 +556,13 @@ controls.minDistance = 0.15
 controls.maxDistance = 32
 
 const stageGroup = new THREE.Group()
+// Catalog plates: the road the plate was shot on, in place of the LED volume.
+const roadGroup = new THREE.Group()
+roadGroup.visible = false
+const studioFloorGroup = new THREE.Group()
 const gridGroup = new THREE.Group()
 const carGroup = new THREE.Group()
-scene.add(stageGroup, gridGroup, carGroup)
+scene.add(stageGroup, roadGroup, studioFloorGroup, gridGroup, carGroup)
 
 // Composite preview borrows the parent's decoder and exact media clock.
 // Standalone Studio retains its independent video element.
@@ -545,7 +570,10 @@ let sharedVideo = null
 if (embedParams.get('sharedVideo') && window.parent !== window) {
   try {
     const candidate = window.parent.document.getElementById(embedParams.get('sharedVideo'))
-    if (candidate?.tagName === 'VIDEO' && new URL(candidate.src).href === new URL(embedParams.get('video'), location.href).href) sharedVideo = candidate
+    // The parent names its footage in data-shared-source: under adaptive
+    // streaming the element's own src is a MediaSource object URL, not the file.
+    const declared = candidate?.dataset.sharedSource || candidate?.src
+    if (candidate?.tagName === 'VIDEO' && declared && new URL(declared, window.parent.location.href).href === new URL(embedParams.get('video'), location.href).href) sharedVideo = candidate
   } catch { /* Cross-origin parents cannot lend media elements. */ }
 }
 const video = sharedVideo || document.createElement('video')
@@ -559,7 +587,15 @@ let displayedVehicleKey = null
 const viewTour = createViewTour()
 let cameraTweenVersion = 0
 let tourVehicleHeight = 0.73
+// Reference convertible's width in scene units, mirrors included.
+const TOUR_REFERENCE_WIDTH = 1.33
+let tourVehicleWidth = TOUR_REFERENCE_WIDTH
 let lastTourPoseKey = ''
+let roadScene = false
+let declaredCoverageBottom = 1
+let measuredCoverageBottom = null
+let lastCoverageProbe = Number.NEGATIVE_INFINITY
+let coverageProbe = null
 THREE.DefaultLoadingManager.onLoad = () => invalidateRender({reflection:true})
 video.loop = true
 video.muted = true
@@ -603,11 +639,13 @@ const stageVideoUniforms = {
   ceilingBottom: { value: 0.25 },
   nativeSphere: { value: 0 },
   validBottom: { value: 1 },
+  edgeMargin: { value: COVERAGE_EDGE_MARGIN },
   captureRadiance: { value: 0 },
   radianceGain: { value: 2 },
 }
 const screenMaterial = makeEquirectStageMaterial(stageVideoUniforms, 0)
 const ceilingMaterial = makeEquirectStageMaterial(stageVideoUniforms, 1)
+const roadMaterial = makeEquirectStageMaterial(stageVideoUniforms, 2)
 const dimMaterial = new THREE.MeshBasicMaterial({
   color: 0x07090b,
   transparent: true,
@@ -653,6 +691,7 @@ function makeEquirectStageMaterial(sharedUniforms, surfaceType) {
       uniform float surfaceType;
       uniform float nativeSphere;
       uniform float validBottom;
+      uniform float edgeMargin;
       uniform float captureRadiance;
       uniform float radianceGain;
       varying vec3 vWorldPosition;
@@ -663,6 +702,34 @@ function makeEquirectStageMaterial(sharedUniforms, surfaceType) {
         return captureRadiance > 0.5
           ? vec4(sRGBTransferEOTF(vec4(max(color, vec3(0.0)), 1.0)).rgb * radianceGain, 1.0)
           : vec4(color, 1.0);
+      }
+      // Plate colour where a ray from the capture point meets the road at p (x, z).
+      vec3 roadSample(vec2 p) {
+        vec3 d = normalize(vec3(p.x, -originY, p.y));
+        float v = min(0.5 - asin(d.y) / PI + verticalOffset, validBottom - edgeMargin);
+        return texture2D(map, vec2(fract(atan(d.z, d.x) / (2.0 * PI) + 0.5 + yaw), 1.0 - v)).rgb;
+      }
+      // The stitch has no pixels for the road under and beside the capture
+      // vehicle. A road looks the same along its length, so continue the
+      // surface ahead and behind straight through the gap: lane lines stay
+      // parallel to the car, and averaging along the lane turns passing
+      // dashes into a steady line rather than a flicker.
+      vec3 roadFill(vec2 p, float holeRadius) {
+        float angle = -2.0 * PI * yaw;
+        vec2 along = vec2(cos(angle), sin(angle));
+        vec2 across = vec2(-along.y, along.x);
+        float lateral = dot(p, across);
+        float reach = holeRadius * 1.08;
+        float edge = sqrt(max(reach * reach - lateral * lateral, 0.0));
+        vec3 ahead = vec3(0.0);
+        vec3 behind = vec3(0.0);
+        for (int i = 0; i < 6; i++) {
+          float run = edge + holeRadius * 0.3 * float(i);
+          ahead += roadSample(along * run + across * lateral);
+          behind += roadSample(across * lateral - along * run);
+        }
+        float blend = edge > 0.0001 ? smoothstep(-edge, edge, dot(p, along)) : 0.5;
+        return mix(behind, ahead, blend) / 6.0;
       }
       void main() {
         vec3 direction = normalize(vec3(vWorldPosition.x, vWorldPosition.y - originY, vWorldPosition.z));
@@ -696,6 +763,17 @@ function makeEquirectStageMaterial(sharedUniforms, surfaceType) {
           visualV = mix(cropBottom, cropTop, heightT) + verticalOffset;
         }
 
+        if (nativeSphere > 0.5 && surfaceType > 1.5) {
+          float depression = (validBottom - edgeMargin - 0.5 - verticalOffset) * PI;
+          float holeRadius = depression > 0.001 ? originY / tan(min(depression, 1.5)) : 1.0e6;
+          float range = length(vWorldPosition.xz);
+          vec3 color = roadSample(vWorldPosition.xz);
+          if (range < holeRadius * 1.25) {
+            color = mix(roadFill(vWorldPosition.xz, holeRadius), color, smoothstep(holeRadius, holeRadius * 1.25, range));
+          }
+          gl_FragColor = plateOutput(color);
+          return;
+        }
         if (nativeSphere > 0.5 && (visualV < 0.0 || visualV > validBottom)) {
           gl_FragColor = vec4(0.025, 0.03, 0.025, 1.0);
           return;
@@ -1090,6 +1168,58 @@ function applyPreset(key) {
   setView(state.selectedView, false)
 }
 
+// LED-volume previews project from a nominal eye line. The road scene projects
+// from where the capture array actually rode, so the road lands on the ground.
+function plateOriginY() {
+  return roadScene ? CAPTURE_HEIGHT : 1.0
+}
+
+// A catalog plate was shot from the vehicle's own position. Lab 360 asks for
+// it as the road itself (scene=road): its lower rows are drawn on the ground
+// the car stands on and everything else on a distant dome, both seen from the
+// capture point, so the car stays in its lane from any camera angle. The LED
+// volume page and other footage keep the stage they are being previewed on.
+function applySceneMode() {
+  const road = roadScene = stageVideoUniforms.nativeSphere.value > 0.5 && embedParams.get('scene') === 'road'
+  roadGroup.visible = road
+  stageGroup.visible = !road
+  studioFloorGroup.visible = !road
+  gridGroup.visible = !road && state.panelGrid
+  stageVideoUniforms.originY.value = plateOriginY()
+  invalidateRender({ reflection: true })
+}
+
+// Reads where the decoded frame's picture actually ends. Re-stitched footage
+// can stop higher than its catalog record says; trusting the record would
+// draw the stitch's black border on the road as a dark ring around the car.
+function probeCoverageBottom(now) {
+  if (stageVideoUniforms.nativeSphere.value < 0.5 || now - lastCoverageProbe < 1500) return
+  lastCoverageProbe = now
+  try {
+    coverageProbe ??= Object.assign(document.createElement('canvas'), { width: 64, height: 512 }).getContext('2d', { willReadFrequently: true })
+    const { width, height } = coverageProbe.canvas
+    coverageProbe.drawImage(video, 0, 0, width, height)
+    const measured = coverageBottomFromPixels(coverageProbe.getImageData(0, 0, width, height).data, width, height)
+    measuredCoverageBottom = refineCoverageBottom(declaredCoverageBottom, measured, measuredCoverageBottom)
+  } catch {
+    // Unreadable (cross-origin) frames keep the declared coverage.
+    return
+  }
+  if (measuredCoverageBottom !== null && measuredCoverageBottom !== stageVideoUniforms.validBottom.value) {
+    stageVideoUniforms.validBottom.value = measuredCoverageBottom
+    invalidateRender({ reflection: true })
+  }
+}
+
+function buildRoad() {
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(ROAD_PLANE_RADIUS, 128), roadMaterial)
+  ground.rotation.x = -Math.PI / 2
+  ground.position.y = -0.016
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(ROAD_DOME_RADIUS, 96, 48), screenMaterial)
+  dome.position.y = CAPTURE_HEIGHT
+  roadGroup.add(ground, dome)
+}
+
 function rebuildStage() {
   clearGroup(stageGroup)
   clearGroup(gridGroup)
@@ -1099,7 +1229,7 @@ function rebuildStage() {
   const height = state.dimensions.heightFt * FEET_TO_UNITS
   const arc = THREE.MathUtils.degToRad(state.dimensions.arcDeg)
   const thetaStart = Math.PI / 2 - arc / 2
-  stageVideoUniforms.originY.value = 1.0
+  stageVideoUniforms.originY.value = plateOriginY()
   stageVideoUniforms.stageHeight.value = height
   stageVideoUniforms.stageRadius.value = radius
 
@@ -1125,7 +1255,7 @@ function rebuildStage() {
   }
 
   buildPanelGrid(radius, height, arc, thetaStart)
-  gridGroup.visible = state.panelGrid
+  gridGroup.visible = state.panelGrid && !roadGroup.visible
   updateMetrics(radius, height, arc)
   invalidateRender({ reflection: true })
 }
@@ -1213,7 +1343,8 @@ function buildCar() {
   const floor = new THREE.Mesh(new THREE.CircleGeometry(8.2, 96), floorMaterial)
   floor.rotation.x = -Math.PI / 2
   floor.position.y = -0.015
-  scene.add(floor)
+  studioFloorGroup.add(floor)
+  buildRoad()
 
   addFloorLogo(0, 2.15, -0.08)
   addFloorLogo(0, -2.15, Math.PI + 0.08)
@@ -1261,15 +1392,20 @@ function loadVehicleSpec(vehicle) {
       disposeVehicleMaterials(sourceMaterials, collectObjectMaterials(carModel))
       normalizeVehicleModel(carModel, vehicle)
       carModel.updateMatrixWorld(true)
-      tourVehicleHeight = new THREE.Box3().setFromObject(carModel).getSize(new THREE.Vector3()).y
+      const tourVehicleSize = new THREE.Box3().setFromObject(carModel).getSize(new THREE.Vector3())
+      tourVehicleHeight = tourVehicleSize.y
+      tourVehicleWidth = tourVehicleSize.z
       vehicleLook.install(carModel)
       syncEnvironment()
 
       carGroup.add(makeVehicleShadow(vehicle))
       carGroup.add(carModel)
+      const cabinShotMoved = displayedVehicleKey !== vehicleKey && ['overShoulder', 'passengerToDriver', 'driverToPassenger'].includes(state.selectedView)
       vehicleReady = true
       vehicleLoading = false
       displayedVehicleKey = vehicleKey
+      // An interior camera belongs to the cabin it was placed in.
+      if (cabinShotMoved && !viewTour.enabled && !state.cameraRig.custom) setView(state.selectedView, false)
       try { localStorage.setItem('plateLabCurrentVehicle', vehicleKey) } catch { /* Optional scene default. */ }
       setPlaybackStatus(video.src ? 'Playing' : `${vehicle.label} loaded`)
       document.querySelector('#vehicleCredit').textContent = vehicle.credit
@@ -1290,6 +1426,7 @@ function loadVehicleSpec(vehicle) {
       clearGroup(carGroup)
       buildFallbackCar()
       tourVehicleHeight = 0.73
+      tourVehicleWidth = TOUR_REFERENCE_WIDTH
       vehicleReady = true
       syncEnvironment()
       setPlaybackStatus('Using fallback car')
@@ -1463,7 +1600,7 @@ function addFloorLogo(x, z, rotationZ) {
   logo.rotation.z = rotationZ
   logo.position.set(x, 0.021, z)
   logo.renderOrder = 3
-  scene.add(logo)
+  studioFloorGroup.add(logo)
 }
 
 function roundedBox(width, height, depth, radius, material) {
@@ -1519,20 +1656,20 @@ function updateViewTour() {
   if (!viewTour.enabled) return
   viewTour.advance(video.currentTime, vehicleReady && !vehicleLoading && !video.paused && !video.ended && !video.seeking && video.readyState >= 3)
   if (!vehicleReady || vehicleLoading) return
-  const poseKey = `${viewTour.elapsed}:${state.vehicleKey}:${tourVehicleHeight}:${reducedMotionQuery.matches}`
+  const poseKey = `${viewTour.elapsed}:${state.vehicleKey}:${tourVehicleHeight}:${tourVehicleWidth}:${reducedMotionQuery.matches}`
   if (poseKey === lastTourPoseKey) return
   lastTourPoseKey = poseKey
-  const pose = sampleViewTour(viewTour.elapsed, views, {
+  const pose = sampleViewTour(viewTour.elapsed, viewsForVehicle(state.vehicleKey), {
     reducedMotion: reducedMotionQuery.matches,
     lengthScale: vehicleModels[state.vehicleKey].targetLengthFt / VEHICLE_PHYSICAL_LENGTHS_FT.ferrari,
+    widthScale: tourVehicleWidth / TOUR_REFERENCE_WIDTH,
     heightScale: tourVehicleHeight / 0.73,
-    enclosed: state.vehicleKey !== 'ferrari',
   })
   camera.position.fromArray(pose.position)
   controls.target.fromArray(pose.target)
   camera.fov = pose.fov
   camera.updateProjectionMatrix()
-  stageVideoUniforms.originY.value = 1.0
+  stageVideoUniforms.originY.value = plateOriginY()
   state.selectedView = pose.view
   state.cameraRig.custom = true
   const button = document.querySelector('#viewTour')
@@ -1546,7 +1683,7 @@ function setView(key, animate = true) {
   const tweenVersion = ++cameraTweenVersion
   state.selectedView = key
   state.cameraRig.custom = false
-  const view = views[key]
+  const view = viewsForVehicle(state.vehicleKey)[key]
   document.querySelectorAll('.view-strip button[data-view]').forEach((button) => {
     const active = button.dataset.view === key
     button.classList.toggle('is-active', active)
@@ -1554,7 +1691,7 @@ function setView(key, animate = true) {
   })
   document.querySelector('#cameraMode').textContent = 'Locked shot'
   syncCameraRigFromView(view)
-  stageVideoUniforms.originY.value = 1.0
+  stageVideoUniforms.originY.value = plateOriginY()
 
   const destination = new THREE.Vector3(...view.position)
   const target = new THREE.Vector3(...view.target)
@@ -1591,7 +1728,7 @@ function applyCameraRig() {
   stopViewTour(false)
   cameraTweenVersion++
   const rig = state.cameraRig
-  stageVideoUniforms.originY.value = 1.0
+  stageVideoUniforms.originY.value = plateOriginY()
   const yaw = THREE.MathUtils.degToRad(rig.orbitDeg)
   const target = new THREE.Vector3(0, rig.aimHeight, 0)
   const destination = new THREE.Vector3(
@@ -1785,7 +1922,7 @@ function syncCameraRigFromLiveCamera() {
   state.cameraRig.lensHeight = Number(camera.position.y.toFixed(2))
   state.cameraRig.aimHeight = Number(controls.target.y.toFixed(2))
   state.cameraRig.focalLength = Math.round(fovToFocalLength(camera.fov))
-  stageVideoUniforms.originY.value = 1.0
+  stageVideoUniforms.originY.value = plateOriginY()
   updateCameraRigOutputs()
 }
 
@@ -2051,6 +2188,10 @@ async function loadVideoSource(src, label, quality = 'rough') {
   const native = sameSource && coverage > 0 && coverage <= 1
   stageVideoUniforms.nativeSphere.value = native ? 1 : 0
   stageVideoUniforms.validBottom.value = native ? coverage : 1
+  declaredCoverageBottom = native ? coverage : 1
+  measuredCoverageBottom = null
+  lastCoverageProbe = Number.NEGATIVE_INFINITY
+  applySceneMode()
   for (const id of ['cropTop','cropBottom','ceilingTop','ceilingBottom','footagePreset','sourceMode']) document.querySelector(`#${id}`).disabled = Boolean(native)
   state.playback.source = { src, label }
   clearViewerFailure()
@@ -2563,6 +2704,7 @@ function applyFootageTransform(texture = stageVideoUniforms.map.value) {
   texture.needsUpdate = true
   screenMaterial.needsUpdate = true
   ceilingMaterial.needsUpdate = true
+  roadMaterial.needsUpdate = true
   invalidateRender({ reflection: true })
 }
 
@@ -2675,6 +2817,7 @@ function renderFrame(now) {
   // created, so no new video-frame callback is guaranteed until playback.
   const decodedFrameReady = Boolean(activeVideoTexture && video.readyState >= 2 && !video.seeking)
   if (shouldRender && decodedFrameReady) activeVideoTexture.needsUpdate = true
+  if (decodedFrameReady) probeCoverageBottom(now)
 
   if (state.reflections && decodedFrameReady) {
     if (reflectionInvalidated) environmentGate.reset()

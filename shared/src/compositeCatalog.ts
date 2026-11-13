@@ -21,7 +21,8 @@ export function plateForComposite(clip: any, sku: string, release: string, appro
     shotType, timeOfDay, weather, season, tags: clip.tags,
     objects: clip.labels.map((l: any) => ({label: l.label, confidence: l.confidence})),
     location: {name:'Downtown Los Angeles',city:'Los Angeles',region:'California',country:'United States'},
-    imu: {collected: true, source:'Imported GPS/IMU; physical synchronization unverified'},
+    // A plate may be published ahead of its telemetry package; it gains GPS/IMU when the package arrives.
+    imu: clip.telemetry === 'pending' ? {collected: false} : {collected: true, source:'Imported GPS/IMU; physical synchronization unverified'},
     status:'live',mmm:{stockClipId:clip.stockId},stageCompat:['led-volume','green-screen','projection'],availability:'available',
     pricing:{perMinuteUsd:PER_MINUTE_USD,totalUsd:priceForDuration(clip.media.duration),minimumMinutes:MINIMUM_MINUTES},
     renditions:{stitchedPreview:clip.videoURL,stagePreview:clip.videoURL,cameraPreviews:{},poster:clip.posterURL},

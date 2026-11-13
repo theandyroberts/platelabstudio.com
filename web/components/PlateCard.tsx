@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import type { Plate } from "@platelab/shared";
 import { stitchStatus, formatUsd } from "@platelab/shared";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
+import { cardPreviewUrl } from "@/lib/browserPreview";
 import { StitchStatus } from "./StitchStatus";
 import { buildStudioHref } from "@/lib/studioHref";
 
@@ -14,7 +15,12 @@ function formatDuration(sec: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/** Catalog card: poster at rest, watermarked preview plays on hover. */
+/**
+ * Catalog card: poster at rest, watermarked preview plays on hover.
+ *
+ * A catalog page holds dozens of these, so a card requests no footage until a
+ * visitor shows interest in it, and releases the connection when they move on.
+ */
 export function PlateCard({
   plate,
   browseReturnPath,
@@ -27,6 +33,11 @@ export function PlateCard({
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewWanted = useRef(false);
   const [playing, setPlaying] = useState(false);
+  // Provisioned clips have a small file made for this hover; it is tried first.
+  const preview = publicMediaUrl(plate.renditions.stitchedPreview);
+  const card = cardPreviewUrl(plate.renditions.stitchedPreview);
+  const hoverSources = card === plate.renditions.stitchedPreview ? [preview] : [card, preview];
+  const hoverSource = useRef(0);
   const detailHref = browseReturnPath
     ? `/plate/${plate.sku}?from=${encodeURIComponent(browseReturnPath)}`
     : `/plate/${plate.sku}`;
@@ -44,14 +55,26 @@ export function PlateCard({
     const v = videoRef.current;
     if (!v) return;
     previewWanted.current = true;
+    if (!v.getAttribute("src")) v.src = hoverSources[hoverSource.current];
     void v.play().then(() => { if (!previewWanted.current) v.pause(); }).catch(() => setPlaying(false));
+  };
+  // A missing hover file falls back to the full preview once, for good.
+  const failed = () => {
+    setPlaying(false);
+    const v = videoRef.current;
+    if (!v || !v.getAttribute("src") || hoverSource.current >= hoverSources.length - 1) return;
+    hoverSource.current += 1;
+    if (!previewWanted.current) { v.removeAttribute("src"); return; }
+    v.src = hoverSources[hoverSource.current];
+    void v.play().catch(() => setPlaying(false));
   };
   const stop = () => {
     const v = videoRef.current;
     if (!v) return;
     previewWanted.current = false;
     v.pause();
-    v.currentTime = 0;
+    // Stop the download too, not only the picture.
+    if (v.getAttribute("src")) { v.removeAttribute("src"); v.load(); }
     setPlaying(false);
   };
 
@@ -79,8 +102,7 @@ export function PlateCard({
             onPlaying={() => { if (previewWanted.current) setPlaying(true); else videoRef.current?.pause(); }}
             onPause={() => setPlaying(false)}
             onWaiting={() => setPlaying(false)}
-            onError={() => setPlaying(false)}
-            src={publicMediaUrl(plate.renditions.stitchedPreview)}
+            onError={failed}
             muted
             loop
             playsInline
