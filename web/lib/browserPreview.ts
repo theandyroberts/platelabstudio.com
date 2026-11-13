@@ -1,7 +1,7 @@
 import clipIds from './browser-preview-clips.json';
 
 const available = new Set(clipIds);
-const COMPOSITE = /^(\/composite-review\/media\/composite\/)([a-z0-9-]+)\/(?:composite|browser-preview-v1)\.mp4([?#].*)?$/;
+const COMPOSITE = /^(\/composite-review\/media\/composite\/)([a-z0-9-]+)\/(?:composite|browser-preview-v2)\.mp4([?#].*)?$/;
 
 /** Adaptive first, with the single progressive file every browser can play. */
 export type VideoSources = { adaptive?: string; progressive: string };
@@ -39,14 +39,14 @@ function provisioned(source: string) {
 /** Presentation-only derivatives. Approved snapshots and delivery metadata stay intact. */
 export function browserPreviewUrl(source: string): string {
   const clip = provisioned(source);
-  return clip ? `${clip.directory}browser-preview-v1.mp4${clip.suffix}` : source;
+  return clip ? `${clip.directory}browser-preview-v2.mp4${clip.suffix}` : source;
 }
 
 /** The bitrate ladder built beside the progressive preview, for provisioned clips. */
 export function adaptiveStreamUrl(source: string): string | undefined {
   const clip = provisioned(source);
   if (!clip || !adaptiveEnabled()) return undefined;
-  return `${clip.directory}stream-v1/master.m3u8${clip.suffix.split('#')[0]}`;
+  return `${clip.directory}stream-v2/master.m3u8${clip.suffix.split('#')[0]}`;
 }
 
 export function videoSources(source: string): VideoSources {
@@ -56,7 +56,7 @@ export function videoSources(source: string): VideoSources {
 /** Small hover preview for catalog cards; other sources are returned unchanged. */
 export function cardPreviewUrl(source: string): string {
   const clip = provisioned(source);
-  return clip ? `${clip.directory}card-preview-v1.mp4${clip.suffix}` : source;
+  return clip ? `${clip.directory}card-preview-v2.mp4${clip.suffix}` : source;
 }
 
 export function heroSources(): VideoSources {

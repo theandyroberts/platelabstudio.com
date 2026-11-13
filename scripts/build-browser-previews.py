@@ -10,6 +10,11 @@ Three presentation-only derivatives are produced beside each source:
   starts quickly and keeps running on a marginal connection.
 * ``card-preview-v1.mp4``     small progressive file for catalog-card hover.
 
+Composite derivatives are at version 2 (``browser-preview-v2.mp4``, ``stream-v2/``,
+``card-preview-v2.mp4``): the November 2026 re-stitch with Plate Lab watermarks
+replaced the footage, and a changed encode never reuses a cached name. The hero
+remains at version 1.
+
 Every output is written under a temporary name and published atomically.
 """
 import argparse
@@ -184,7 +189,7 @@ if __name__ == '__main__':
         if not wanted(clip):
             continue
         directory = args.composite_root / clip
-        encode(directory / 'composite.mp4', directory / 'browser-preview-v1.mp4', 2048, '4M', args)
-        encode_stream(directory / 'composite.mp4', directory / 'stream-v1', COMPOSITE_LADDER, args)
-        encode_card(directory / 'composite.mp4', directory / 'card-preview-v1.mp4', args)
+        encode(directory / 'composite.mp4', directory / 'browser-preview-v2.mp4', 2048, '4M', args)
+        encode_stream(directory / 'composite.mp4', directory / 'stream-v2', COMPOSITE_LADDER, args)
+        encode_card(directory / 'composite.mp4', directory / 'card-preview-v2.mp4', args)
     print('COMPLETE', flush=True)
