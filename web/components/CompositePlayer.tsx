@@ -3,12 +3,14 @@ import {type ReactNode,forwardRef,useEffect,useImperativeHandle,useMemo,useRef,u
 import {preload} from 'react-dom';
 import {stitchStatus,type StitchStatus as Status} from '@platelab/shared';
 import {StitchStatus} from './StitchStatus';
+import {CompositeSelection} from './CompositeSelection';
+import {secondsToFrame,formatFrameTimecode} from '../../viewer/src/playback-selection.js';
 import {compositeStartupFiles,videoSources} from '@/lib/browserPreview';
 import {bufferedAhead,hasSource,prefersNoAutoplay,useAdaptiveVideo} from '@/lib/adaptiveVideo';
 import styles from './CompositeDetail.module.css';
 
 export type CompositePlayerHandle={seek:(time:number)=>void};
-type Props={fullLabTelemetry?:ReactNode;stitchStatus?:Status;id:string;title:string;videoURL:string;stageBase:string;posterURL:string;start:number;duration:number;fps:number;sourceTimecode:string;coverageBottom:number;onTimeChange:(time:number)=>void;onSettled?:()=>void};
+type Props={sku?:string;fullLabTelemetry?:ReactNode;stitchStatus?:Status;id:string;title:string;videoURL:string;stageBase:string;posterURL:string;start:number;duration:number;fps:number;sourceTimecode:string;coverageBottom:number;onTimeChange:(time:number)=>void;onSettled?:()=>void};
 const AUTO_SWITCH_SECONDS=10;
 // Footage comes first. Lab 360 (a 3D scene of several megabytes) may use the
 // connection only once this much footage is in hand, or when it is asked for.
@@ -259,7 +261,8 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
         {telemetryOpen&&<div id={`lab-telemetry-${props.id}`} className={styles.fullLabTelemetryPopup} role="region" aria-label="Full Lab map and IMU">{props.fullLabTelemetry}</div>}
         <button type="button" className={styles.telemetryToggle} aria-expanded={telemetryOpen} aria-controls={telemetryOpen?`lab-telemetry-${props.id}`:undefined} onClick={()=>setTelemetryOpen(open=>!open)}>map/imu</button>
       </div>}
-      <div className={styles.transport}><button onClick={()=>wanted?pause(true):void startPlayback()} aria-label={wanted?'Pause composite':'Play composite'}>{wanted?<PauseIcon/>:<PlayIcon/>}</button><span>{clock(current)}</span><input aria-label="Clip timeline" type="range" min="0" max={props.duration-1/props.fps} step={1/props.fps} value={current} onChange={event=>seek(Number(event.target.value))}/><span className={styles.dim}>{clock(props.duration)}</span><button onClick={()=>expanded?closeFullLab():shell.current?.requestFullscreen?.().catch(()=>{})} aria-label={expanded?'Exit Full Lab':'Full screen'}>⛶</button></div>
+      <div className={styles.transport}><button disabled={!ready} onClick={()=>{pause(true);seek(Math.max(0,(secondsToFrame(video.current?.currentTime||0,props.fps)-1)/props.fps));}} aria-label="Step back one frame">−1 frame</button><button onClick={()=>wanted?pause(true):void startPlayback()} aria-label={wanted?'Pause composite':'Play composite'}>{wanted?<PauseIcon/>:<PlayIcon/>}</button><button disabled={!ready} onClick={()=>{pause(true);seek(Math.min(props.duration-1/props.fps,(secondsToFrame(video.current?.currentTime||0,props.fps)+1)/props.fps));}} aria-label="Step forward one frame">+1 frame</button><span>{formatFrameTimecode(secondsToFrame(current,props.fps),props.fps)}</span><input aria-label="Clip timeline" type="range" min="0" max={props.duration-1/props.fps} step={1/props.fps} value={current} onChange={event=>seek(Number(event.target.value))}/><span className={styles.dim}>{formatFrameTimecode(secondsToFrame(props.duration,props.fps),props.fps)}</span><button onClick={()=>expanded?closeFullLab():shell.current?.requestFullscreen?.().catch(()=>{})} aria-label={expanded?'Exit Full Lab':'Full screen'}>⛶</button></div>
+      <CompositeSelection id={props.id} sku={props.sku} fps={props.fps} duration={props.duration} sourceTimecode={props.sourceTimecode} media={video} seek={seek} pause={()=>pause(true)} ready={ready&&!error}/>
       {error&&<p role="alert" className={styles.playbackError}>{error}</p>}
     </div>
     <p className={styles.previewHint} role="status">{hint}</p>

@@ -8,7 +8,7 @@ export function normalizeFps(value, fallback = DEFAULT_FPS) {
 export function secondsToFrame(seconds, fps = DEFAULT_FPS) {
   const safeFps = normalizeFps(fps)
   const safeSeconds = Number.isFinite(Number(seconds)) ? Math.max(0, Number(seconds)) : 0
-  return Math.floor(safeSeconds * safeFps + 0.000001)
+  return Math.floor(safeSeconds * safeFps + 0.0001)
 }
 
 export function frameToSeconds(frame, fps = DEFAULT_FPS) {

@@ -131,3 +131,7 @@
 .buffering{position:absolute;inset:0;pointer-events:none;opacity:0;animation:bufferingAppear .2s linear .6s forwards}
 .buffering>span{position:absolute;right:16px;bottom:16px;padding:8px 12px;border:1px solid #ffffff30;border-radius:4px;background:#10150fe8;color:#e3e3d5;font-size:12px}
 @keyframes bufferingAppear{to{opacity:1}}
+
+/* Keep selection controls outside the image and camera buttons in every mode. */
+.transport button[aria-label="Step back one frame"],.transport button[aria-label="Step forward one frame"]{width:auto;white-space:nowrap;font-size:12px;padding:5px 8px;border:1px solid #617368;border-radius:5px;color:#c5e7df}
+.expandedPlayer{overflow-y:auto}.fullLabTelemetry{bottom:230px}@media(max-width:850px){.fullLabTelemetry{bottom:310px}.transport{gap:7px}.transport>span{font-size:10px}}

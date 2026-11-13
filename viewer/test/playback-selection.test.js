@@ -83,3 +83,10 @@ test('steps exactly one frame and clamps to footage bounds', () => {
   assert.equal(stepFrame(0, -1, 100), 0)
   assert.equal(stepFrame(99, 1, 100), 99)
 })
+
+// Browsers round currentTime to microseconds; a boundary must not get stuck
+// one frame behind on repeated +1 frame clicks.
+test('frame conversion tolerates browser microsecond rounding', () => {
+  assert.equal(secondsToFrame(17.958333, 24), 431)
+  assert.equal(secondsToFrame(17.95, 24), 430)
+})
