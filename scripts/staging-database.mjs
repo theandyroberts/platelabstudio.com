@@ -222,6 +222,10 @@ if (action === "apply") {
       path: "supabase/migrations/20261108020000_project_scene_grid.sql",
       appliedSql: "select to_regprocedure('public.save_project_scene_grid(uuid,text,jsonb,integer,text,text)') is not null as applied;",
     },
+    {
+      path: "supabase/migrations/20261110010000_scene_clip_order_membership.sql",
+      appliedSql: "select to_regprocedure('public.add_chosen_clips_to_order(uuid,uuid)') is not null as applied;",
+    },
   ];
 
   for (const migration of migrations) {
@@ -251,6 +255,9 @@ if (action === "apply") {
     "supabase/tests/0008_default_stage_vehicle_checks.sql",
     "supabase/tests/0009_scene_configuration_checks.sql",
     "supabase/tests/0010_scene_search_guidance_checks.sql",
+    "supabase/tests/0011_scene_choice_checks.sql",
+    "supabase/tests/0012_project_scene_grid_checks.sql",
+    "supabase/tests/0013_scene_order_membership_checks.sql",
   ];
 
   for (const relativePath of tests) {

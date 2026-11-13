@@ -1015,3 +1015,90 @@ input[type="checkbox"] {
   border-color: #7e8c70;
   background: #333e2c;
 }
+
+/* Full Lab keeps scene context above the footage, outside its stitch outline. */
+.scene-context[hidden] { display: none; }
+.scene-context { background: #f2efe8; color: #20241e; border-bottom: 1px solid #aaa69c; }
+.scene-context__row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 9px 24px; font-size: 19px; line-height: 1.3; }
+.scene-context__row + .scene-context__row { border-top: 1px solid #d4cfc5; }
+.scene-context__row > span { color: #555c50; }
+.scene-context__row a { color: inherit; font-weight: 650; text-decoration: none; overflow-wrap: anywhere; }
+.scene-context__row a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.scene-context__row a:focus-visible { outline: 2px solid #c36b3c; outline-offset: 3px; }
+.standalone-studio { height: 100dvh; overflow: hidden; }
+.standalone-studio #app { height: 100%; display: flex; flex-direction: column; }
+.standalone-studio .scene-context { flex: 0 0 auto; }
+.standalone-studio .workbench { flex: 1; min-height: 0; height: auto; grid-template-columns: minmax(0, 1fr) auto; overflow: hidden; }
+.standalone-studio .workbench.is-collapsed { grid-template-columns: minmax(0, 1fr) 0; }
+.standalone-studio .viewport { height: 100%; min-height: 0; display: grid; grid-template-rows: minmax(220px, 1fr) auto; overflow-y: auto; container-type: inline-size; }
+.standalone-studio #stageCanvas { grid-row: 1; width: 100%; height: 100%; min-height: 0; min-width: 0; }
+.standalone-studio .control-panel { height: 100%; min-height: 0; overflow-y: auto; }
+.standalone-studio.has-scene-context .studio-origin__mode,
+.standalone-studio.has-scene-context #studioOriginProject,
+.standalone-studio.has-scene-context #studioOriginScene,
+.standalone-studio.has-scene-context #backToProject { display: none; }
+.standalone-studio.has-scene-context .studio-origin { padding: 7px 10px; }
+/* Flow layout replaces fixed offsets: wrapped camera groups can never sit underneath the transport. */
+.viewer-bottom-controls { display: contents; }
+.standalone-studio .viewer-bottom-controls { display: flex; flex-direction: column; gap: 10px; padding: 12px 24px 32px; background: #07090a; min-width: 0; }
+.standalone-studio .transport { position: static; padding: 10px; margin: 0; min-width: 0; box-shadow: none; }
+.standalone-studio .view-strip { position: static; max-height: none; overflow: visible; gap: 8px; }
+.standalone-studio .transport__selection { display: flex; flex-wrap: wrap; align-items: center; }
+.standalone-studio .transport__readout { flex: 1 1 560px; order: 0; width: auto; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.standalone-studio .transport__feedback { flex: 1 0 100%; max-width: none; }
+.standalone-studio .view-group { flex-wrap: wrap; }
+@container (max-width: 760px) {
+  .standalone-studio .viewport__bar { padding: 16px; gap: 12px; }
+  .standalone-studio .viewport__bar h1 { font-size: 27px; }
+  .standalone-studio .viewer-bottom-controls { padding: 10px 12px 32px; }
+  .standalone-studio .transport__readout { order: 3; flex-basis: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+  .standalone-studio .transport__timeline { grid-template-columns: auto auto auto minmax(0, 1fr) auto; gap: 6px; }
+  .standalone-studio .transport__timeline .transport__clock:first-of-type { display: none; }
+  .standalone-studio .transport__step { padding: 6px; }
+  .standalone-studio .transport__clock { min-width: 0; }
+}
+@media (max-width: 560px) {
+  .scene-context__row { padding: 8px 14px; font-size: 17px; grid-template-columns: 70px minmax(0, 1fr); gap: 8px; }
+  .standalone-studio .viewport__meta { display: none; }
+}
+
+/* Context navigation stays above the canvas and doesn't take space from the control rows. */
+.scene-context { position: relative; z-index: 10; }
+.scene-context__row { grid-template-columns: 84px minmax(0, 1fr) auto; align-items: center; }
+.scene-context__scene { display: flex; align-items: center; gap: 18px; min-width: 0; }
+#contextScene { flex: 0 1 auto; min-width: 0; }
+#contextPlates { display: flex; align-items: center; gap: 8px; padding: 5px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.context-plate { display: block; flex: 0 0 72px; width: 72px; aspect-ratio: 24 / 10; border: 2px solid #8b9185; border-radius: 2px; opacity: .8; }
+.context-plate img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center 20%; }
+.context-plate:hover { opacity: 1; border-color: #474e42; }
+.context-plate[aria-current="page"] { opacity: 1; border-color: #fff; outline: 3px solid #f16c23; outline-offset: 1px; }
+.context-goto { position: relative; align-self: center; }
+.context-goto > button { font-size: 12px; font-weight: 750; letter-spacing: .08em; padding: 8px 12px; background: #fffdf9; border: 1px solid #828b7a; border-radius: 3px; color: #293724; }
+.context-goto > button:hover, .context-goto > button[aria-expanded="true"] { background: #e0e9d8; border-color: #4b633d; }
+.context-goto > nav { position: absolute; top: 100%; right: 0; min-width: 260px; width: max-content; max-width: min(420px, calc(100vw - 28px)); max-height: min(440px, 65dvh); overflow-y: auto; padding: 8px; background: #fffdf9; border: 1px solid #8a9182; border-radius: 4px; box-shadow: 0 12px 30px #0004; color: #20241e; font-size: 16px; }
+.context-goto > nav[hidden] { display: none; }
+.context-goto nav a { display: block; padding: 10px 12px; border-radius: 3px; }
+.context-goto nav a:hover, .context-goto nav a:focus-visible { background: #e6eddf; text-decoration: none; }
+.context-goto nav p { margin: 8px; font-size: 14px; }
+.context-goto nav h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #626a5c; margin: 12px 12px 4px; }
+.context-goto nav button { color: #273f24; background: #e6eddf; border: 1px solid #8a9182; padding: 8px 14px; margin: 8px; }
+@media (max-width: 760px) {
+  .scene-context__scene { flex-wrap: wrap; gap: 4px; }
+  #contextPlates { flex-basis: 100%; }
+  #contextPlates:empty { display: none; }
+}
+@media (max-width: 560px) {
+  .scene-context__row { grid-template-columns: 62px minmax(0, 1fr) auto; }
+  .context-goto > button { padding: 8px; }
+}
+
+/* Model first, then paint and other modifiers. Native radios support keyboard selection. */
+#vehicleDropdown[hidden], #vehicleRadios[hidden] { display: none; }
+.vehicle-choices { border: 0; padding: 0; margin: 0 0 18px; min-width: 0; }
+.vehicle-choices legend { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+.vehicle-option { display: flex; align-items: center; gap: 12px; padding: 10px 6px; font-size: 30px; font-weight: 750; line-height: 1.25; cursor: pointer; border-radius: 4px; }
+.vehicle-option:has(input:checked) { color: #e7f5d8; background: #b7e37d16; }
+.vehicle-option input { appearance: auto; flex: 0 0 auto; width: 24px; height: 24px; margin: 0; accent-color: var(--green); }
+.vehicle-option:focus-within { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.composite-preview .vehicle-option { font-size: 16px; padding: 8px 4px; gap: 8px; }
+.composite-preview .vehicle-option input { width: 18px; height: 18px; }

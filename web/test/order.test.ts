@@ -14,10 +14,10 @@ function fixture(authenticated:boolean,responses:Array<{data:unknown;error?:unkn
 test('guests have no order and do not query private tables',async()=>{
   const {client,calls}=fixture(false,[]);assert.deepEqual(await readOrder(client),{authenticated:false,items:[]});assert.equal(calls.length,0);
 });
-test('order uses active accessible scenes and selected statuses, retaining scene associations',async()=>{
+test('order uses active accessible scenes and independent membership, retaining scene associations',async()=>{
   const {client,calls}=fixture(true,[{data:[{id:'s1',name:'Drive',project_id:'p1',projects:{name:'Demo'}}]},{data:[{id:'c1',scene_id:'s1',status:'selected',version:2,stock_clips:{sku:'PL-1630021',source_metadata:{title:'Tunnel'}}}]}]);
   const order=await readOrder(client);assert.equal(order.items.length,1);assert.equal(order.items[0].sceneName,'Drive');assert.equal(order.items[0].sku,'PL-1630021');
-  assert.ok(calls.some(c=>JSON.stringify(c)===JSON.stringify(['in','status',['selected','submitted']])));
+  assert.ok(calls.some(c=>JSON.stringify(c)===JSON.stringify(['eq','in_order',true])));
   assert.ok(calls.some(c=>JSON.stringify(c)===JSON.stringify(['eq','projects.status','active'])));
   assert.ok(calls.some(c=>JSON.stringify(c)===JSON.stringify(['is','archived_at',null])));
 });

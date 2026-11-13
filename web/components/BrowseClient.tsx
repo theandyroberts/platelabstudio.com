@@ -19,7 +19,7 @@ import {
   type BrowseSort,
 } from "@/lib/browseSearch";
 import styles from "./BrowseClient.module.css";
-import { BrowseSceneTools, useBrowseSceneLibrary } from "./BrowseSceneTools";
+import { ActiveSceneClips, BrowseSceneTools, useBrowseSceneLibrary } from "./BrowseSceneTools";
 import { sceneBrowseParams } from "@/lib/sceneSearch";
 
 /**
@@ -245,10 +245,19 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
   };
 
   return (
+    <div className={styles.browseShell} data-panel-open={sceneLibrary.open}>
+      <BrowseSceneTools state={sceneLibrary} sceneId={sceneId} pendingSku={pendingSku}
+        onSceneChange={setSceneId} onPendingSave={setPendingSku}
+        onSearchScene={scene => {
+          const next = new URLSearchParams({ q: params.get("details") === "1" ? scene.name : scene.brief || scene.name, scene: scene.id });
+          if (pendingSku) next.set("save", pendingSku);
+          replaceParams(next);
+        }} />
+    <div className={styles.contentFrame}>
     <div className={styles.workspace}>
       <h1 className="sr-only">Search plates</h1>
       {params.get("error") && <p className="auth-alert error" role="alert">{params.get("error")}</p>}
-      <BrowseSceneTools state={sceneLibrary} sceneId={sceneId} pendingSku={pendingSku}
+      <ActiveSceneClips state={sceneLibrary} sceneId={sceneId} pendingSku={pendingSku}
         onSceneChange={setSceneId} onPendingSave={setPendingSku}
         onSearchScene={scene => {
           const next = new URLSearchParams({ q: params.get("details") === "1" ? scene.name : scene.brief || scene.name, scene: scene.id });
@@ -265,7 +274,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
           onChange={(e) => set({ q: e.target.value })}
           aria-label="Search plates"
         />
-        <button className="secondary-button" aria-expanded={filtersOpen} aria-controls="plate-search-filters" onClick={() => setFiltersOpen(value => !value)}><SlidersHorizontal size={18} /> Filters</button>
+
       </div>
       <div className={styles.searchLayout}>
       <section id="plate-search-filters" aria-label="Search filters" className={styles.filters} hidden={!filtersOpen}>
@@ -353,6 +362,7 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
             )}
           </div>
           <div className={styles.toolbar}>
+        <button className="secondary-button" aria-expanded={filtersOpen} aria-controls="plate-search-filters" onClick={() => setFiltersOpen(value => !value)}><SlidersHorizontal size={18} /> Filters</button>
             <label className={`${styles.sortLabel} mono`}>
               Sort
               <select
@@ -483,6 +493,8 @@ export function BrowseClient({ plates }: { plates: Plate[] }) {
         )}
       </div>
       </div>
+    </div>
+    </div>
     </div>
   );
 }

@@ -579,6 +579,8 @@ export type Database = {
           created_at: string
           duration_tier_seconds: number | null
           id: string
+          in_order: boolean
+          order_added_at: string | null
           in_frame: number | null
           out_frame: number | null
           scene_id: string
@@ -593,6 +595,8 @@ export type Database = {
           created_at?: string
           duration_tier_seconds?: number | null
           id?: string
+          in_order?: boolean
+          order_added_at?: string | null
           in_frame?: number | null
           out_frame?: number | null
           scene_id: string
@@ -607,6 +611,8 @@ export type Database = {
           created_at?: string
           duration_tier_seconds?: number | null
           id?: string
+          in_order?: boolean
+          order_added_at?: string | null
           in_frame?: number | null
           out_frame?: number | null
           scene_id?: string
@@ -999,6 +1005,14 @@ export type Database = {
           source_metadata: Json
           title: string
         }[]
+      }
+      set_scene_clip_order: {
+        Args: { target_scene_clip_id: string; next_in_order: boolean; expected_version: number }
+        Returns: number
+      }
+      add_chosen_clips_to_order: {
+        Args: { target_project_id: string; target_scene_id?: string }
+        Returns: number
       }
       set_scene_clip_status: {
         Args: {

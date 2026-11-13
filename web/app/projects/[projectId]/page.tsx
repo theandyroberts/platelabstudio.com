@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ProjectDetailsAutosave } from "@/components/ProjectDetailsAutosave";
+import { readSceneLibrary } from '@/lib/sceneLibrary';
+import type { ScenePreview } from '@/lib/sceneSearch';
 import { SceneGrid } from "@/components/SceneGrid";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,6 +61,9 @@ export default async function ProjectPage({
     ]);
 
   if (!project) notFound();
+  const library = await readSceneLibrary(supabase, '');
+  const scenePreviews = library.status === 200 ? (library.body as {scenePreviews:ScenePreview[]}).scenePreviews.filter(clip => scenes?.some(scene=>scene.id===clip.sceneId)) : [];
+
 
   const stageProfile = stages?.find(
     (stage) => stage.id === project.stage_profile_id,
@@ -138,7 +143,7 @@ export default async function ProjectPage({
         <p className="auth-alert success">Project details updated.</p>
       )}
 
-      <SceneGrid projectId={project.id} projectName={project.name} version={project.version} scenes={scenes ?? []} saveSku={query.save} />
+      <SceneGrid scenePreviews={scenePreviews} projectId={project.id} projectName={project.name} version={project.version} scenes={scenes ?? []} saveSku={query.save} />
     </main>
   );
 }

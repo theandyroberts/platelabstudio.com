@@ -8,7 +8,7 @@ export function OrderDetails({initialItems}:{initialItems:OrderItem[]}){
   async function remove(item:OrderItem){
     setPending(item.id);setError('');
     try{
-      const response=await fetch(`/api/scene-clips/${item.id}/status`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status:'considering',expectedVersion:item.version})});
+      const response=await fetch('/api/order',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({sceneClipId:item.id,inOrder:false,expectedVersion:item.version})});
       const result=await response.json();if(!response.ok)throw Error(result.error||'This plate could not be removed.');
       setItems(current=>current.filter(row=>row.id!==item.id));
       window.dispatchEvent(new Event('platelab-order-updated'));

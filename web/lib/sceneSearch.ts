@@ -14,6 +14,7 @@ export type SearchScene = {
 export type SavedSearchClip = {
   id: string;
   status: SceneClipStatus;
+  inOrder?: boolean;
   version: number;
   inFrame: number | null;
   outFrame: number | null;
@@ -49,3 +50,16 @@ export function sceneDetailsHref(scene: { id: string; name: string }, saveSku?: 
   if (saveSku) params.set("save", saveSku);
   return `/browse?${params}`;
 }
+
+
+export type ScenePreview = {
+  chosen: boolean;
+  inOrder: boolean;
+  id: string;
+  sceneId: string;
+  sku: string;
+  title: string;
+  poster: string;
+  stitchStatus: Plate["stitchStatus"];
+  studioHref: string;
+};

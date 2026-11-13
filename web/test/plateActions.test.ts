@@ -22,7 +22,7 @@ test('Add to Order uses current version and does not modify saved ranges',async(
 });
 test('existing order and submitted selections are not reset',async()=>{
   for(const status of ['selected','submitted']){
-    const {calls,request}=api([{body:{id:'saved'}},{body:{authenticated:true,clips:[{id:'saved',status,version:3}]}}]);
+    const {calls,request}=api([{body:{id:'saved'}},{body:{authenticated:true,clips:[{id:'saved',status,inOrder:true,version:3}]}}]);
     await addPlateToScene('scene','PL-123','order',request);assert.equal(calls.length,2);
   }
 });
@@ -37,4 +37,11 @@ test('authentication, access denial and version conflicts never report success',
 test('project creation accepts only local plate return paths',()=>{
   assert.equal(plateActionReturnPath('/plate/PL-123?action=order&from=%2Fbrowse'),'/plate/PL-123?action=order&from=%2Fbrowse');
   for(const path of ['https://evil.test/plate/PL-123','//evil.test','/projects','/plate/../../evil','/plate/PL-123/extra',null])assert.equal(plateActionReturnPath(path),null);
+});
+
+test('restoring a chosen plate to the order leaves the choice unchanged',async()=>{
+  const {calls,request}=api([{body:{id:'saved'}},{body:{authenticated:true,clips:[{id:'saved',status:'selected',inOrder:false,version:4}]}},{body:{version:5,inOrder:true}}]);
+  await addPlateToScene('scene','PL-123','order',request);
+  assert.equal(calls[2].url,'/api/order');
+  assert.deepEqual(JSON.parse(String(calls[2].init?.body)),{sceneClipId:'saved',inOrder:true,expectedVersion:4});
 });

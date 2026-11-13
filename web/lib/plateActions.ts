@@ -20,7 +20,11 @@ export async function addPlateToScene(sceneId:string,sku:string,action:PlateActi
     const clip=(library.clips as SavedSearchClip[]).find(item=>item.id===saved.id);
     if(!clip)throw new PlateActionError('Refresh your scenes and try again.',409);
     // Keep existing order selections, submitted clips and saved frame ranges intact.
-    if(clip.status==='selected'||clip.status==='submitted')return;
+    if(clip.inOrder)return;
+    if(clip.status==='selected'||clip.status==='submitted') {
+      await json('/api/order',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({sceneClipId:clip.id,inOrder:true,expectedVersion:clip.version})});
+      return;
+    }
     await json(`/api/scene-clips/${encodeURIComponent(clip.id)}/status`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({status:'selected',expectedVersion:clip.version})});
   }catch(error){
     if(error instanceof PlateActionError&&error.status===401)throw error;

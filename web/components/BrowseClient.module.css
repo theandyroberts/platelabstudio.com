@@ -64,7 +64,7 @@
   border: 1px solid var(--hairline-strong);
   background: var(--ink-2);
   color: var(--paper);
-  font-size: 10px;
+  font-size: 15px;
 }
 
 .activeFilterChip span { color: var(--paper-60); }
@@ -76,7 +76,7 @@
   border-left: 2px solid var(--orange);
   background: color-mix(in srgb, var(--ink-2) 86%, transparent);
   color: var(--paper-60);
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.45;
 }
 
@@ -101,7 +101,7 @@
   margin-bottom: 10px;
   padding: 8px 10px;
   color: var(--paper-60);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .retryButton {
@@ -109,7 +109,7 @@
   border-bottom: 1px solid var(--orange);
   color: var(--paper);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -138,7 +138,7 @@
   border: 1px solid var(--hairline-strong);
   color: var(--paper-60);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 8px 11px;
@@ -186,12 +186,12 @@
   .spinner { animation: none; }
   .resultRegion { transition: none; }
 }
-.workspace { max-width: var(--max); margin-inline: auto; padding: 12px 24px 0; --paper-60: #d4d2cb; --paper-38: #bdbbb5; --hairline-strong: #68666a; }
+.workspace { max-width: var(--max); margin-inline: auto; padding: 12px 24px 0;  }
 /* Only the footage results extend beyond the centered search controls. */
 @media (min-width: 1320px) {
   .resultRegion { width: calc(100cqw - 2 * clamp(32px, 3cqw, 64px)); margin-left: calc((100% - 100cqw) / 2 + clamp(32px, 3cqw, 64px)); }
 }
-.workspace input::placeholder { color: #bdbbb5; opacity: 1; }
+.workspace input::placeholder { color: #626159; opacity: 1; }
 .searchBar { display: flex; gap: 16px; align-items: center; margin: 12px 0; }
 .searchBar input { min-width: 0; flex: 1; font-size: 17px; }
 .searchBar > button { flex: none; gap: 8px; }
@@ -206,8 +206,17 @@
   .searchBar { gap: 8px; flex-wrap: wrap; }
   .searchBar input { font-size: 16px; }
   .searchBar > svg { display: none; }
-  .searchBar > button { padding: 10px; font-size: 12px; }
+  .searchBar > button { padding: 10px; font-size: 15px; }
   .filters { grid-template-columns: minmax(0,1fr); }
 }
 
 .resultsHead { margin-bottom:10px; }
+
+/* Dock the scene library beside results; its edge pull remains visible when collapsed. */
+.browseShell { --scene-panel-width: 320px; display: grid; grid-template-columns: var(--scene-panel-width) minmax(0,1fr); align-items: start; transition: grid-template-columns 240ms ease; }
+.browseShell[data-panel-open="false"] { grid-template-columns: 0 minmax(0,1fr); }
+.contentFrame { min-width: 0; container-type: inline-size; }
+@media (max-width: 760px) {
+  .browseShell { --scene-panel-width: min(300px, calc(100vw - 48px)); grid-template-columns: 0 minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .browseShell { transition: none; } }

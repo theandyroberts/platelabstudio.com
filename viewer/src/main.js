@@ -1,4 +1,5 @@
 import './style.css'
+import { installStudioNavigation } from './studio-navigation.js'
 import '../../shared/stitch-status.css'
 import {stitchStatus,STITCH_STATUS_LABELS} from '../../shared/src/stitchStatus.ts'
 import { installControlVisibility } from './control-visibility.js'
@@ -237,7 +238,18 @@ const embedParams = new URLSearchParams(location.search)
 const footageStitchStatus = stitchStatus(embedParams.get('stitchStatus'))
 if (embedParams.get('embed') === '1') document.body.classList.add('composite-embed')
 if (embedParams.get('preview') === '1') document.body.classList.add('composite-preview')
+if (embedParams.get('embed') !== '1' && embedParams.get('preview') !== '1') document.body.classList.add('standalone-studio')
 app.innerHTML = `
+  <header class="scene-context" id="sceneContext" aria-label="Project and scene" hidden>
+    <div class="scene-context__row">
+      <span>Project:</span><a id="contextProject" target="_top"></a>
+      <div class="context-goto"><button type="button" aria-label="Go to project" aria-expanded="false" aria-controls="projectDestinations">GOTO</button><nav id="projectDestinations" aria-label="Other projects" hidden></nav></div>
+    </div>
+    <div class="scene-context__row">
+      <span>Scene:</span><div class="scene-context__scene"><a id="contextScene" target="_top"></a><nav id="contextPlates" aria-label="Plates in this scene"></nav></div>
+      <div class="context-goto"><button type="button" aria-label="Go to scene" aria-expanded="false" aria-controls="sceneDestinations">GOTO</button><nav id="sceneDestinations" aria-label="Other scenes" hidden></nav></div>
+    </div>
+  </header>
   <main class="workbench">
     <section class="viewport stitch-surface" data-stitch-status="${footageStitchStatus}" aria-label="LED wall preview">
       <span class="stitch-status-label stitch-viewer-label">${STITCH_STATUS_LABELS[footageStitchStatus]}</span>
@@ -264,6 +276,7 @@ app.innerHTML = `
         <p id="viewerAlertDetail">Check the footage source and try again.</p>
         <button id="retryFootage" type="button">Retry footage</button>
       </section>
+      <div class="viewer-bottom-controls">
       <section class="transport" aria-label="Footage playback and selection">
         <div class="transport__timeline">
           <button class="transport__step" id="stepBack" type="button" aria-label="Step back one frame" disabled>−1 frame</button>
@@ -295,6 +308,7 @@ app.innerHTML = `
         </div>
       </section>
       <div class="view-strip" id="viewStrip" aria-label="Camera views"></div>
+      </div>
       <button id="panelToggle" class="panel-toggle" type="button" title="Hide controls" aria-label="Hide controls">›</button>
     </section>
 
@@ -433,11 +447,11 @@ app.innerHTML = `
             <span data-icon="rotate"></span>
           </button>
         </div>
+        <div id="vehicleChoice" data-control-row>
+          <fieldset id="vehicleRadios" class="vehicle-choices"><legend>Vehicle model</legend></fieldset>
+          <label class="field" id="vehicleDropdown" hidden><span>Vehicle model</span><select id="vehicleSelect"></select></label>
+        </div>
         <div class="swatches" id="finishSwatches" aria-label="Car paint finish"></div>
-        <label class="field">
-          <span>Vehicle model</span>
-          <select id="vehicleSelect"></select>
-        </label>
         <label class="range-field">
           <span>Vehicle rotation <output id="vehicleYawOut">0 deg</output></span>
           <input id="vehicleYaw" type="range" min="-180" max="180" step="1" value="0" />
@@ -468,6 +482,7 @@ app.innerHTML = `
   </main>
 `
 
+const studioNavigation = installStudioNavigation(document.querySelector('#sceneContext'))
 installControlVisibility()
 
 // Collapsible control panel: a drawer pull pinned to the viewport/panel edge.
@@ -777,11 +792,24 @@ function buildControls() {
 
   const vehicleSelect = document.querySelector('#vehicleSelect')
   if (vehicleSelect) {
+    const useRadios = Object.keys(vehicleModels).length < 7
+    document.querySelector('#vehicleRadios').hidden = !useRadios
+    document.querySelector('#vehicleDropdown').hidden = useRadios
     Object.entries(vehicleModels).forEach(([key, vehicle]) => {
       const option = document.createElement('option')
       option.value = key
       option.textContent = vehicle.label
       vehicleSelect.append(option)
+      if (useRadios) {
+        const label = document.createElement('label')
+        label.className = 'vehicle-option'
+        const radio = document.createElement('input')
+        radio.type = 'radio'; radio.name = 'vehicleModel'; radio.value = key
+        radio.checked = key === state.vehicleKey
+        radio.addEventListener('change', () => { if (radio.checked) loadVehicle(key) })
+        const name = document.createElement('span'); name.textContent = vehicle.label
+        label.append(radio, name); document.querySelector('#vehicleRadios').append(label)
+      }
     })
     vehicleSelect.value = state.vehicleKey
     vehicleSelect.addEventListener('change', (event) => loadVehicle(event.target.value))
@@ -1193,11 +1221,15 @@ function buildCar() {
   loadVehicle(state.vehicleKey)
 }
 
+function syncVehicleChoice() {
+  document.querySelector('#vehicleSelect').value = state.vehicleKey
+  document.querySelectorAll('input[name="vehicleModel"]').forEach(radio => { radio.checked = radio.value === state.vehicleKey })
+}
+
 function loadVehicle(key) {
   const vehicle = vehicleModels[key] || vehicleModels.ferrari
   state.vehicleKey = vehicleModels[key] ? key : 'ferrari'
-  const vehicleSelect = document.querySelector('#vehicleSelect')
-  if (vehicleSelect) vehicleSelect.value = state.vehicleKey
+  syncVehicleChoice()
   updateVehicleCredit()
   loadVehicleSpec(vehicle)
 }
@@ -1249,7 +1281,7 @@ function loadVehicleSpec(vehicle) {
       vehicleLoading = false
       if (vehicleReady && displayedVehicleKey) {
         state.vehicleKey = displayedVehicleKey
-        document.querySelector('#vehicleSelect').value = displayedVehicleKey
+        syncVehicleChoice()
         updateVehicleCredit()
         setPlaybackStatus('Vehicle could not load. Keeping the current car.')
         invalidateRender()
@@ -1966,6 +1998,21 @@ function configureStudioContext(params) {
 function renderStudioContext() {
   const { projectId, projectName, sceneId, sceneName, sku } = state.context
   const linked = Boolean(projectId && sceneId)
+  const contextHeader = document.querySelector('#sceneContext')
+  const contextProject = document.querySelector('#contextProject')
+  const contextScene = document.querySelector('#contextScene')
+  contextHeader.hidden = !linked || !document.body.classList.contains('standalone-studio')
+  document.body.classList.toggle('has-scene-context', linked)
+  contextProject.textContent = projectName || 'Linked project'
+  contextScene.textContent = sceneName || 'Linked scene'
+  if (linked) {
+    contextProject.href = `/projects/${encodeURIComponent(projectId)}`
+    contextScene.href = `/browse?${new URLSearchParams({ scene: sceneId, q: sceneName, details: '1' })}`
+  } else {
+    contextProject.removeAttribute('href')
+    contextScene.removeAttribute('href')
+  }
+  studioNavigation.update({ ...state.context, sceneClipId: state.playback.sceneClipId })
   const mode = document.querySelector('#studioOriginMode')
   const project = document.querySelector('#studioOriginProject')
   const sceneLabel = document.querySelector('#studioOriginScene')

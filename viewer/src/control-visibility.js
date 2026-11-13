@@ -7,7 +7,7 @@ export function applyControlVisibility(root, controls) {
   for (const control of STUDIO_CONTROLS) {
     const input = panel.querySelector(`#${control.id}`)
     if (!input) continue
-    const row = control.selector ? panel.querySelector(control.selector) : input.closest('label')
+    const row = control.selector ? panel.querySelector(control.selector) : (input.closest('[data-control-row]') || input.closest('label'))
     if (!row) continue
     row.classList.toggle('visitor-control-hidden', !controls[control.id])
     const section = row.closest('.control-group, .imu-controls')

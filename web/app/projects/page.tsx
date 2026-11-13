@@ -1,107 +1,21 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-export const dynamic = "force-dynamic";
-
-function projectDate(value: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(value));
-}
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { readSceneLibrary } from '@/lib/sceneLibrary';
+import { ProjectsOverview } from '@/components/ProjectsOverview';
+import type { ProjectOverviewData } from '@/lib/projectOverview';
+export const dynamic = 'force-dynamic';
 
 export default async function ProjectsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login?next=/projects");
-
-  const { data: projects, error } = await supabase
-    .from("projects")
-    .select(
-      "id, name, status, last_activity_at",
-    )
-    .eq("status", "active")
-    .order("last_activity_at", { ascending: false });
-
-  const projectIds = projects?.map((project) => project.id) ?? [];
-  const { data: scenes } = projectIds.length
-    ? await supabase
-        .from("scenes")
-        .select("id, project_id")
-        .in("project_id", projectIds)
-        .is("archived_at", null)
-    : { data: [] };
-
-  const sceneCounts = new Map<string, number>();
-  for (const scene of scenes ?? []) {
-    sceneCounts.set(
-      scene.project_id,
-      (sceneCounts.get(scene.project_id) ?? 0) + 1,
-    );
-  }
-
-  return (
-    <main className="workspace-shell">
-      <header className="lab-task-header">
-        <h1>Projects</h1>
-        <div className="workspace-actions">
-          <Link href="/projects/new" className="primary-button">
-            + New project
-          </Link>
-        </div>
-      </header>
-
-      {error && (
-        <p className="auth-alert error">
-          Your projects could not be loaded. Please refresh and try again.
-        </p>
-      )}
-
-      {projects?.length ? (
-        <section className="project-list" aria-label="Your projects">
-          <div className="project-list-head mono" aria-hidden="true">
-            <span>Project</span>
-            <span>Scenes</span>
-            <span>Updated</span>
-            <span />
-          </div>
-          {projects.map((project) => {
-            const count = sceneCounts.get(project.id) ?? 0;
-            return (
-              <Link
-                href={`/projects/${project.id}`}
-                className="project-row"
-                key={project.id}
-              >
-                <strong>{project.name}</strong>
-                <span>{count}</span>
-                <span className="dim">
-                  {projectDate(project.last_activity_at)}
-                </span>
-                <span className="project-row-arrow">→</span>
-              </Link>
-            );
-          })}
-        </section>
-      ) : (
-        <section className="workspace-empty">
-          <p className="mono accent">Start with the shot list</p>
-          <h2>Turn the production into a searchable plate plan.</h2>
-          <p>
-            Create the project, add the first scene, and describe what needs to
-            be outside the windows. We will carry that context into the plate
-            catalog.
-          </p>
-          <Link href="/projects/new" className="primary-button inline-cta">
-            Create your first project
-          </Link>
-        </section>
-      )}
-    </main>
-  );
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login?next=/projects');
+  const result = await readSceneLibrary(supabase, '');
+  const data = result.status === 200 ? result.body as ProjectOverviewData : null;
+  return <main className="workspace-shell">
+    <header className="lab-task-header"><h1>Projects</h1><Link href="/projects/new" className="primary-button">+ New project</Link></header>
+    {!data ? <p className="auth-alert error">Your projects could not be loaded. Please refresh and try again.</p>
+      : data.projects.length ? <ProjectsOverview {...data} />
+      : <section className="workspace-empty"><h2>Start your plate plan.</h2><p>Create a project, add scenes, and choose the plates for each shot.</p><Link href="/projects/new" className="primary-button inline-cta">Create your first project</Link></section>}
+  </main>;
 }

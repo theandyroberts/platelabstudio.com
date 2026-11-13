@@ -7,7 +7,7 @@ export type OrderItem = {
   projectId: string; projectName: string; sceneId: string; sceneName: string;
 };
 
-/** Session/RLS reads only: order entries remain the existing selected scene clips. */
+/** Order membership is independent of the scene choice; all reads retain session RLS. */
 export async function readOrder(supabase: SupabaseClient<Database>) {
   const {data:{user}} = await supabase.auth.getUser();
   if (!user) return {authenticated:false, items:[] as OrderItem[]};
@@ -18,7 +18,7 @@ export async function readOrder(supabase: SupabaseClient<Database>) {
   if (!scenes?.length) return {authenticated:true,items:[] as OrderItem[]};
   const {data:clips,error} = await supabase.from('scene_clips')
     .select('id, scene_id, status, version, stock_clips(sku, source_metadata)')
-    .in('scene_id',scenes.map(scene=>scene.id)).in('status',['selected','submitted']).order('created_at');
+    .in('scene_id',scenes.map(scene=>scene.id)).eq('in_order',true).order('created_at');
   if (error) throw new Error('Your order could not be loaded. Please retry.');
   const items:OrderItem[] = (clips??[]).map(clip=>{
     const scene=scenes.find(scene=>scene.id===clip.scene_id)!;

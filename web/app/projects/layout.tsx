@@ -3,5 +3,5 @@ export default function ProjectsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="lab-theme">{children}</div>;
+  return <div className="lab-theme planning-theme">{children}</div>;
 }

@@ -2394,3 +2394,55 @@ body:has(> .home-page) .site-header .site-nav .cta:hover {
 .scene-associated-plates h2 { font-size:20px; }
 .scene-associated-plates .scene-matching-heading { margin-top:32px; padding-top:24px; border-top:1px solid var(--hairline-strong); }
 .scene-editor-table th { color:var(--paper); font-weight:600; }
+
+/* Planning surfaces share the project editor's warm paper palette. */
+.planning-theme { font-size: 17px; --paper-60: #50534e; --paper-38: #60635c; --hairline-strong: #aaa69c; }
+body:has(.planning-theme) { background: #f2efe8; }
+body:has(.planning-theme) .site-header { background: #fffdf9; --paper: #18181a; --paper-60: #41463f; --hairline: #d0cabf; --ink: #f2efe8; color: #18181a; }
+body:has(.planning-theme) .brand-artwork { content: url('/branding/plate-lab-horizontal-ink.svg'); }
+body:has(.planning-theme) .site-footer { background: #f2efe8; color: #50534e; border-color: #d0cabf; margin-top: 0; }
+.planning-theme .mono { font-size: 13px; letter-spacing: .035em; }
+.planning-theme .primary-button, .planning-theme .secondary-button { font-size: 15px; }
+.planning-theme .workspace-form label, .planning-theme .scene-editor-table th { font-size: 15px; }
+.planning-theme .workspace-form input, .planning-theme .workspace-form select, .planning-theme .workspace-form textarea, .planning-theme .scene-editor-table input, .planning-theme .scene-editor-table select { font-size: 17px; }
+.planning-theme .scene-row-actions button, .planning-theme .grid-save-status, .planning-theme .scene-grid-count, .planning-theme .project-row { font-size: 15px; }
+.planning-theme .scene-editor-table th:nth-child(6) { width: 180px; }
+.planning-theme .scene-chosen-marker { background: #e0eff8; color: #164b6c; }
+.planning-theme .plate-card, .planning-theme .plate-card .body { border-color: #bcb6aa; }
+.planning-theme .plate-card .meta .dimmer { color: #4f544b; }
+.planning-theme .plate-card .meta .accent { color: #92431f; }
+.planning-theme .plate-card .meta .mono { font-size: 13px; }
+.planning-theme .plate-card h3.plate-preview-description { font-size: 15px; }
+.planning-theme .plate-card .plate-preview-heading .sku-chip { font-size: 12px; }
+.planning-theme .plate-card-studio, .planning-theme .plate-card-project { font-size: 13px; min-height: 40px; text-transform: none; }
+.planning-theme .plate-card-project { background: #fffdf9; color: #242923; border-color: #928e83; }
+.planning-theme .plate-card-project[data-added="true"] { background: #e0eedf; color: #1b512d; border-color: #579168; }
+.planning-theme .plate-card-project[data-added="true"] > span { color: #24713b; }
+.planning-theme .plate-card a:focus-visible, .planning-theme .plate-card button:focus-visible { outline-color: #305e48; }
+.planning-theme .filter-chip { font-size: 15px; }
+body:has(.planning-theme) .site-nav > a { font-size: 17px; }
+
+/* Visual project scene grid. Edit state is explicit and survives pointer/focus changes. */
+.scene-editor-table th:nth-child(2) { width: 27%; }
+.scene-editor-table th:nth-child(3) { width: 146px; }
+.scene-editor-table th:nth-child(4) { width: 100px; }
+.scene-editor-table th:nth-child(5) { width: auto; }
+.planning-theme .scene-editor-table th:nth-child(6) { width: 116px; }
+.scene-editor-table td { white-space: normal; }
+.scene-name-edit { width: 100%; border: 1px solid transparent; background: transparent; color: var(--paper); font: inherit; font-size: 17px; line-height: 1.4; text-align: left; padding: 9px; cursor: text; }
+.scene-name-edit:hover { border-color: #aaa69c; }
+.scene-editor-table tr[data-editing=true] input:not([readonly]) { border-color: #858b7f; background: #fffdf9; }
+.scene-editor-table input:focus-visible, .scene-name-edit:focus-visible { outline: 2px solid #397954; outline-offset: 1px; }
+.scene-vehicle-preview { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; min-height: 60px; padding: 2px 16px 2px 2px; background: #fffdf9; border: 1px solid transparent; cursor: pointer; color: var(--paper); }
+.scene-vehicle-preview img { width: 110px; max-width: 100%; height: 56px; object-fit: contain; }
+.scene-vehicle-preview span:not(.vehicle-chevron) { font-size: 14px; }
+.scene-vehicle-preview .vehicle-chevron { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); }
+.scene-vehicle-preview.is-editing { border-color: #858b7f; }
+.scene-vehicle-preview:focus-within { outline: 2px solid #397954; outline-offset: 1px; }
+.scene-editor-table .scene-vehicle-preview select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.scene-grid-thumbs { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; padding: 3px; }
+.scene-grid-thumb { display: block; position: relative; width: 80px; aspect-ratio: 24/10; flex: 0 0 80px; overflow: hidden; background: #171b16; }
+.scene-grid-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.scene-grid-thumb:hover, .scene-grid-thumb:focus-visible { outline: 2px solid #397954; outline-offset: 2px; }
+.scene-thumb-chosen { position: absolute; bottom: 2px; right: 2px; background: #24743d; color: white; width: 19px; height: 19px; display: grid; place-items: center; border-radius: 50%; font-weight: 800; }
+.scene-row-actions button.scene-details-arrow { font-size: 24px; line-height: 1; min-width: 38px; padding: 7px!important; }

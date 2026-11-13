@@ -1,43 +1,50 @@
 "use client";
 import { SceneClipCard } from "./SceneClipCard";
 import { applySceneClipChanges, isChosenClip } from "@/lib/sceneClipWorkspace";
-import clipStyles from "./SceneClipWorkspace.module.css";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { stitchStatus } from "@platelab/shared";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookmarkSimple, FolderOpen, X } from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, FolderOpen, X } from "@phosphor-icons/react";
 import { publicMediaUrl } from "@/lib/publicMediaUrl";
 import { buildStudioHref } from "@/lib/studioHref";
 import { formatSceneClipSelectionDuration } from "@/lib/sceneClipSelection";
-import type { SearchScene, SavedSearchClip } from "@/lib/sceneSearch";
+import type { SearchScene, SavedSearchClip, ScenePreview } from "@/lib/sceneSearch";
 import type { SceneClipStatus } from "@/lib/sceneClipWorkspace";
 import styles from "./BrowseSceneTools.module.css";
 
 export function useBrowseSceneLibrary(sceneId: string, returnPath: string, onPendingSave: (sku: string | null) => void) {
   const router = useRouter();
-  const [library, setLibrary] = useState<{ authenticated: boolean; scenes: SearchScene[]; clips: SavedSearchClip[] } | null>(null);
+  const [library, setLibrary] = useState<{ authenticated: boolean; scenes: SearchScene[]; projects: { id: string; name: string }[]; clips: SavedSearchClip[]; scenePreviews: ScenePreview[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [feedback, setFeedback] = useState("");
   const [pending, setPending] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, updateOpen] = useState(true);
+  useEffect(() => {
+    try { updateOpen(localStorage.getItem("platelab-search-panel") !== "collapsed"); } catch { /* Storage is optional. */ }
+  }, []);
+  const setOpen = useCallback((value: boolean) => {
+    updateOpen(value);
+    try { localStorage.setItem("platelab-search-panel", value ? "open" : "collapsed"); } catch { /* Storage is optional. */ }
+  }, []);
   const [revision, setRevision] = useState(0);
   const activeScene = useRef(sceneId);
   activeScene.current = sceneId;
+  useEffect(() => { setFeedback(""); }, [sceneId]);
 
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    setLibrary(null);
     fetch(`/api/scene-library${sceneId ? `?scene=${encodeURIComponent(sceneId)}` : ""}`, { signal: controller.signal, cache: "no-store" })
       .then(async response => {
         const body = await response.json();
         if (!response.ok) throw new Error(body.error || "Saved clips could not be loaded.");
         if (!controller.signal.aborted) setLibrary(body);
       })
-      .catch(reason => { if (!controller.signal.aborted) setError(reason.message); })
+      .catch(reason => { if (!controller.signal.aborted) { setLibrary(null); setError(reason.message); } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [sceneId, revision]);
@@ -87,7 +94,8 @@ export function useBrowseSceneLibrary(sceneId: string, returnPath: string, onPen
       if (!response.ok) throw new Error(body.error || "The clip could not be updated.");
       window.dispatchEvent(new Event('platelab-order-updated'));
       if (activeScene.current !== targetScene) return;
-      setLibrary(current => current && ({ ...current, clips: applySceneClipChanges(current.clips, body.sceneClips) }));
+      setLibrary(current => current && ({ ...current, clips: applySceneClipChanges(current.clips, body.sceneClips), scenePreviews: status === "rejected" ? current.scenePreviews.filter(item => item.id !== clip.id) : current.scenePreviews }));
+      setRevision(value => value + 1);
       setFeedback(status === "selected" ? `${clip.plate.sku} chosen for this scene.` : "Saved clips updated.");
     } catch (reason) {
       if (activeScene.current === targetScene) setError(reason instanceof Error ? reason.message : "The clip could not be updated.");
@@ -106,22 +114,9 @@ type SceneToolsProps = {
   onPendingSave: (sku: string | null) => void;
 };
 
-export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, onSearchScene, onPendingSave }: SceneToolsProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
+export function ActiveSceneClips({ state, sceneId, pendingSku, onSceneChange, onSearchScene, onPendingSave }: SceneToolsProps) {
   const scene = state.library?.scenes.find(item => item.id === sceneId);
-  const clips = state.library?.clips ?? [];
-  const saved = clips.filter(clip => clip.status !== "rejected");
-  const visible = saved;
-
-  useEffect(() => {
-    if (state.open && !dialog.current?.open) dialog.current?.showModal();
-    if (!state.open && dialog.current?.open) dialog.current?.close();
-    if (!state.open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, [state.open]);
-
+  const visible = state.loading ? [] : (state.library?.clips ?? []).filter(clip => clip.status !== "rejected");
   const clipCards = scene ? <>
                 {visible.map(clip => {
                   const inOrder = clip.status === "selected" || clip.status === "submitted";
@@ -132,68 +127,59 @@ export function BrowseSceneTools({ state, sceneId, pendingSku, onSceneChange, on
                     scene: { projectId: scene.projectId, projectName: scene.projectName, sceneId: scene.id, sceneName: scene.name },
                     selection: { sceneClipId: clip.id, version: clip.version, inFrame: clip.inFrame, outFrame: clip.outFrame },
                   }) : null;
-                  return <SceneClipCard key={clip.id} plate={clip.plate} studioHref={studioHref} duration={duration} chosen={isChosenClip(clip.status)} pending={state.pending} onChoose={() => state.setStatus(clip, inOrder ? "considering" : "selected")} onRemove={() => state.setStatus(clip, "rejected")} />;
+                  return <SceneClipCard compact key={clip.id} plate={clip.plate} studioHref={studioHref} duration={duration} chosen={isChosenClip(clip.status)} pending={state.pending} onChoose={() => state.setStatus(clip, inOrder ? "considering" : "selected")} onRemove={() => state.setStatus(clip, "rejected")} />;
                 })}
   </> : null;
 
-  const selector = (id: string) => (
-    <label className={styles.destination}>
-      <span>Save to scene</span>
-      <select id={id} value={sceneId} disabled={state.loading || state.pending} onChange={event => onSceneChange(event.target.value)}>
-        <option value="">Choose a project / scene</option>
-        {state.library?.scenes.map(item => <option key={item.id} value={item.id}>{item.projectName} / {item.name}</option>)}
-      </select>
-    </label>
-  );
-  const newProjectHref = `/projects/new${pendingSku ? `?save=${encodeURIComponent(pendingSku)}` : ""}`;
+  return <section className={styles.activeWorkspace} aria-label="Active scene and saved clips">
+    <div className={styles.activeHeading}>
+      <label className={styles.sceneSelector}>
+        <span>Active scene:</span>
+        <select aria-label="Active scene" value={sceneId} disabled={state.pending || state.loading} onChange={event => onSceneChange(event.target.value)}>
+          <option value="">{state.loading ? "Loading scenes…" : "Choose a scene"}</option>
+          {state.library?.projects.map(project => <optgroup key={project.id} label={project.name}>
+            {state.library!.scenes.filter(item => item.projectId === project.id).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </optgroup>)}
+        </select>
+      </label>
+      {scene && <button className={styles.searchScene} onClick={() => onSearchScene(scene)}>Search this scene →</button>}
+    </div>
+    {scene && <p className={styles.sceneContext}>{scene.projectName} · {state.loading ? "Loading clips…" : `${visible.length} saved clip${visible.length === 1 ? "" : "s"}`}</p>}
+    {pendingSku && <div className={styles.pendingSave}><span>{pendingSku}</span><button className="primary-button" disabled={!scene || state.pending || state.loading} onClick={() => state.save(pendingSku)}>Save to scene</button><button aria-label="Cancel saving clip" onClick={() => onPendingSave(null)}><X size={18} /></button></div>}
+    {visible.length > 0 ? <div className={styles.selectedClips} role="region" aria-label="Saved scene clips" tabIndex={0}>{clipCards}</div> : !state.loading && <p className={styles.empty}>{scene ? "Add clips from the results below to compare them for this scene." : state.library?.authenticated ? "Choose a scene, or browse the full plate library below." : <button onClick={() => state.signIn()}>Sign in to organize plates into projects and scenes →</button>}</p>}
+    {state.error && <p className={styles.error} role="alert">{state.error} <button onClick={state.retry}>Retry</button></p>}
+    {state.feedback && <p className={styles.feedback} role="status">{state.feedback}</p>}
+  </section>;
+}
 
-  return (
-    <>
-      <div className={styles.context}>
-        {state.library?.authenticated ? <>
-          {selector("search-scene")}
-          {scene && <>
-            <button className="secondary-button" onClick={() => onSearchScene(scene)}>Search this scene</button>
-            <Link href={`/projects/${scene.projectId}`} className="secondary-button"><FolderOpen size={16} /> Go to project</Link>
-          </>}
-          {!scene && <Link href="/projects" className="secondary-button"><FolderOpen size={16} /> Projects</Link>}
-        </> : <span className="mono dim">Plate library</span>}
-        <button className="secondary-button" onClick={() => state.setOpen(true)} aria-haspopup="dialog">
-          <BookmarkSimple size={17} /> Saved clips{scene ? ` (${saved.length})` : ""}
-        </button>
-      </div>
-      {pendingSku && <div className={styles.pendingSave}>
-        <span>{pendingSku}</span>
-        <button className="primary-button" disabled={state.loading || state.pending} onClick={() => state.save(pendingSku)}>Save to scene</button>
-        <button title="Cancel saving clip" aria-label="Cancel saving clip" onClick={() => onPendingSave(null)}><X size={18} /></button>
-      </div>}
-      {!state.open && state.error && <p className={styles.error} role="alert">{state.error} <button onClick={state.retry}>Retry</button>{sceneId && <button onClick={() => onSceneChange("")}>Choose another scene</button>}</p>}
-      {!state.open && state.feedback && <p className="sr-only" role="status">{state.feedback}</p>}
-      <dialog ref={dialog} className={styles.drawer} aria-labelledby="saved-clips-heading" onClose={() => state.setOpen(false)} onClick={event => { if (event.target === dialog.current) state.setOpen(false); }}>
-        <div className={styles.drawerContent}>
-          <header className={styles.drawerHeader}>
-            <h2 id="saved-clips-heading">Saved clips</h2>
-            <button autoFocus title="Close saved clips" aria-label="Close saved clips" onClick={() => state.setOpen(false)}><X size={22} /></button>
-          </header>
-          {state.loading ? <p role="status">Loading scenes...</p> : state.library?.authenticated ? <>
-            {selector("saved-scene")}
-            <div className={styles.links}>
-              {scene && <Link href={`/projects/${scene.projectId}${pendingSku ? `?save=${encodeURIComponent(pendingSku)}` : ""}#add-scene`}>Add scene</Link>}
-              <Link href={newProjectHref}>New project</Link>
+export function BrowseSceneTools({ state, sceneId, onSceneChange }: SceneToolsProps) {
+  return <div className={styles.rail} data-open={state.open}>
+    <aside id="search-scene-panel" className={styles.drawer} aria-label="Projects and scenes" inert={!state.open}>
+      <div className={styles.drawerContent}>
+        <header className={styles.drawerHeader}><h2>Projects & scenes</h2><button aria-label="Collapse projects and scenes" onClick={() => state.setOpen(false)}><CaretLeft size={18} /></button></header>
+        {state.library?.authenticated ? <nav className={styles.projectTree} aria-label="Projects and scenes">
+          {state.library.projects.map(project => <details key={project.id} open className={styles.project}>
+            <summary><FolderOpen size={17} /><span>{project.name}</span></summary>
+            <div className={styles.scenes}>
+              {state.library!.scenes.filter(item => item.projectId === project.id).map(item => <div key={item.id} className={styles.sceneGroup}>
+                <button className={styles.sceneButton} aria-current={sceneId === item.id ? "true" : undefined} disabled={state.pending || state.loading} onClick={() => onSceneChange(item.id)}>{item.name}</button>
+                <div className={styles.tinyClips}>
+                  {state.library!.scenePreviews.filter(clip => clip.sceneId === item.id).map(clip => <Link key={clip.id} className={styles.tinyClip} href={clip.studioHref} aria-label={`Open ${clip.sku} in Lab 360: ${clip.title}`}>
+                    <span className={`${styles.tinyImage} stitch-surface`} data-stitch-status={stitchStatus(clip.stitchStatus)}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={clip.poster} alt="" loading="lazy" />
+                    </span>
+                    <span><strong>{clip.sku}</strong><span className={styles.tinyTitle}>{clip.title}</span></span>
+                  </Link>)}
+                </div>
+              </div>)}
+              {!state.library!.scenes.some(item => item.projectId === project.id) && <p className={styles.empty}>No scenes yet.</p>}
             </div>
-            {pendingSku && <button className="primary-button" disabled={!scene || state.pending} onClick={() => state.save(pendingSku)}>Save {pendingSku} to scene</button>}
-            {scene && <>
-              <p className={styles.feedback}>{saved.length} clips · Choose one for this scene.</p>
-              <div className={clipStyles.grid}>
-                {!visible.length && <p className={styles.empty}>No clips added to this scene yet.</p>}
-                {clipCards}
-              </div>
-            </>}
-          </> : !state.error && <Link href={`/login?next=${encodeURIComponent(typeof window === "undefined" ? "/browse" : window.location.pathname + window.location.search)}`} className="primary-button">Sign in to save clips</Link>}
-          {state.error && <p className={styles.error} role="alert">{state.error} <button onClick={state.retry}>Retry</button>{sceneId && <button onClick={() => onSceneChange("")}>Choose another scene</button>}</p>}
-          {state.feedback && <p className={styles.feedback} role="status">{state.feedback}</p>}
-        </div>
-      </dialog>
-    </>
-  );
+          </details>)}
+          {!state.library.projects.length && <Link href="/projects/new">Create a project →</Link>}
+        </nav> : <p className={styles.empty}>{state.loading ? "Loading projects…" : "Your projects and scenes will appear here when you sign in."}</p>}
+      </div>
+    </aside>
+    <button className={styles.panelToggle} aria-expanded={state.open} aria-controls="search-scene-panel" aria-label={state.open ? "Collapse projects and scenes" : "Show projects and scenes"} onClick={() => state.setOpen(!state.open)}>{state.open ? <CaretLeft size={16} /> : <CaretRight size={16} />}</button>
+  </div>;
 }

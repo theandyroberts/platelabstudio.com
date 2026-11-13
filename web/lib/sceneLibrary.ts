@@ -1,13 +1,15 @@
 import type { Database } from "@platelab/shared";
 import { plateSchema } from "@platelab/shared";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildStudioHref } from "@/lib/studioHref";
+import { publicMediaUrl } from "@/lib/publicMediaUrl";
 import { withCatalogPreview } from "@/lib/catalogPreview";
 
 const reply = (body: unknown, status = 200) => ({ body, status });
 
 export async function readSceneLibrary(supabase: SupabaseClient<Database>, sceneId: string) {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return reply({ authenticated: false, scenes: [], clips: [] });
+  if (!user) return reply({ authenticated: false, projects: [], scenes: [], clips: [], scenePreviews: [] });
 
   // The session client applies project membership / scene RLS to every read.
   const { data: rows, error } = await supabase.from("scenes")
@@ -18,20 +20,35 @@ export async function readSceneLibrary(supabase: SupabaseClient<Database>, scene
     const project = Array.isArray(row.projects) ? row.projects[0] : row.projects;
     return project ? [{ id: row.id, projectId: row.project_id, projectName: project.name, name: row.name, brief: row.search_brief || "" }] : [];
   });
-  if (!sceneId) return reply({ authenticated: true, scenes, clips: [] });
-  if (!scenes.some(scene => scene.id === sceneId)) return reply({ error: "This scene is unavailable or you no longer have access." }, 404);
+  if (sceneId && !scenes.some(scene => scene.id === sceneId)) return reply({ error: "This scene is unavailable or you no longer have access." }, 404);
+  const { data: projects, error: projectError } = await supabase.from("projects")
+    .select("id, name").eq("status", "active").order("last_activity_at", { ascending: false });
+  if (projectError) return reply({ error: "Your projects could not be loaded. Please retry." }, 503);
+  if (!scenes.length) return reply({ authenticated: true, projects: projects ?? [], scenes, clips: [], scenePreviews: [] });
 
   const { data: clips, error: clipError } = await supabase.from("scene_clips")
-    .select("id, status, version, in_frame, out_frame, stock_clips(source_metadata)")
-    .eq("scene_id", sceneId).order("created_at");
+    .select("id, scene_id, status, in_order, version, in_frame, out_frame, stock_clips(source_metadata)")
+    .in("scene_id", scenes.map(scene => scene.id)).neq("status", "rejected").order("created_at");
   if (clipError) return reply({ error: "Saved clips could not be loaded. Please retry." }, 503);
   const parsed = (clips ?? []).flatMap(row => {
     const stock = Array.isArray(row.stock_clips) ? row.stock_clips[0] : row.stock_clips;
     const result = plateSchema.safeParse(stock?.source_metadata);
-    return result.success ? [{ id: row.id, status: row.status, version: row.version, inFrame: row.in_frame, outFrame: row.out_frame, plate: withCatalogPreview(result.data) }] : [];
+    return result.success ? [{ id: row.id, sceneId: row.scene_id, status: row.status, inOrder: row.in_order, version: row.version, inFrame: row.in_frame, outFrame: row.out_frame, plate: withCatalogPreview(result.data) }] : [];
   });
   if (parsed.length !== (clips ?? []).length) return reply({ error: "Some saved clip details are unavailable. Please retry." }, 503);
-  return reply({ authenticated: true, scenes, clips: parsed });
+  const scenePreviews = parsed.map(clip => {
+    const scene = scenes.find(item => item.id === clip.sceneId)!;
+    const { plate } = clip;
+    const studioHref = plate.renditions.stagePreview ? buildStudioHref({
+      video: publicMediaUrl(plate.renditions.stagePreview), label: `${plate.sku} · ${plate.title}`,
+      fps: plate.media.fps, sourceTimecode: plate.media.timecode, sku: plate.sku,
+      scene: { projectId: scene.projectId, projectName: scene.projectName, sceneId: scene.id, sceneName: scene.name },
+      selection: { sceneClipId: clip.id, version: clip.version, inFrame: clip.inFrame, outFrame: clip.outFrame },
+    }) : `/plate/${plate.sku}#plate-viewer`;
+    return { chosen: clip.status === "selected" || clip.status === "submitted", inOrder: clip.inOrder, id: clip.id, sceneId: clip.sceneId, sku: plate.sku, title: plate.title,
+      poster: publicMediaUrl(plate.renditions.poster), stitchStatus: plate.stitchStatus, studioHref };
+  });
+  return reply({ authenticated: true, projects: projects ?? [], scenes, clips: parsed.filter(clip => clip.sceneId === sceneId), scenePreviews });
 }
 
 export async function saveSceneLibraryClip(supabase: SupabaseClient<Database>, input: { sceneId: string; sku: string }) {
