@@ -48,7 +48,7 @@ export const CompositePlayer=forwardRef<CompositePlayerHandle,Props>(function Co
   preload(props.posterURL,{as:'image',fetchPriority:'high'});
   for(const file of compositeStartupFiles(sources))preload(file,{as:'fetch',crossOrigin:'anonymous'});
   // Stable for this clip: changing views or the playhead never reloads the iframe.
-  const [stageURL]=useState(()=>`${props.stageBase}/index.html?${new URLSearchParams({video:playbackURL,label:props.title,fps:String(props.fps),sourceTimecode:props.sourceTimecode,coverageBottom:String(props.coverageBottom),stitchStatus:stitchStatus(props.stitchStatus),embed:'1',preview:'1',sharedVideo:videoId})}`);
+  const [stageURL]=useState(()=>`${props.stageBase}/index.html?${new URLSearchParams({video:playbackURL,label:props.title,fps:String(props.fps),sourceTimecode:props.sourceTimecode,coverageBottom:String(props.coverageBottom),stitchStatus:stitchStatus(props.stitchStatus),embed:'1',preview:'1',scene:'road',sharedVideo:videoId})}`);
   const seek=(time:number)=>{targetTime.current=time;setCurrent(time);props.onTimeChange(time);if(video.current&&video.current.readyState>=1)video.current.currentTime=time;};
   useImperativeHandle(ref,()=>({seek}));
   function pause(byVisitor=false){
