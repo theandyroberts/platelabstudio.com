@@ -110,12 +110,28 @@ ffmpeg -n -ss 50 -i "$MASTER" -frames:v 1 -vf scale=1920:-1 -q:v 2 -update 1 web
 ### Lab camera tour
 
 **View tour**, beside the camera presets in both Lab builds, starts a repeating
-72-second sequence adapted from the homepage showreel. It uses the current clip
-and vehicle, with continuous quarter-turn exterior sweeps, a side-view skyline
-reveal, and cuts into/out of the cabin. The vehicle's travel orientation is
-unchanged. The sequence is defined in
-`viewer/src/view-tour.js`; the original hero is a prerecorded render, not a live
-camera track.
+72-second sequence modelled on the homepage showreel: twelve six-second shots
+that ride within about a metre of the body at belt-line height (front fender,
+profile track, rear deck, in through the driver's window, across the hood,
+three-quarter and tail arcs), with four cuts into the cabin for the
+over-shoulder and passenger/driver dialogue angles. Exterior cameras keep the
+same distance off the sheet metal on larger vehicles; cabin cameras come from
+each vehicle's own `cabinViews` in `viewer/src/main.js`. The sequence is
+defined in `viewer/src/view-tour.js`; the original hero is a prerecorded
+render, not a live camera track.
+
+### Lab 360 road scene
+
+On plate pages Lab 360 loads the viewer with `scene=road`. The plate is then
+drawn as the road it was shot on rather than on an LED wall: rows below the
+horizon land on a ground plane under the car, the rest on a dome, both
+projected from the capture point 1.45 m above the road
+(`viewer/src/road-ground.js`). The car model stands at the capture point, so it
+stays in the capture vehicle's lane from every camera angle. The stitch has no
+pixels for the few metres of road under the rig; that patch is continued from
+the road ahead and behind, and the true lower edge is read from the decoded
+frame because catalog `coverageBottom` can lag a re-stitch. `/stage` (LED
+volume) does not pass `scene=road` and keeps the volume walls and floor.
 
 The toggle defaults off and preserves the current play/pause state. Tour time
 advances only with playable footage; pauses, buffering, seeking, hidden views,
