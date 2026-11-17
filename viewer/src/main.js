@@ -50,6 +50,8 @@ import {
 } from './scene-scale.js'
 import { VEHICLE_PHYSICAL_LENGTHS_FT } from './vehicle-specs.js'
 import { orientVehicleModel } from './vehicle-orientation.js'
+import { rigVehicleWheels } from './vehicle-wheels.js'
+import { sampleWheelTravel } from './wheel-motion.js'
 import { createViewTour, sampleViewTour } from './view-tour.js'
 import { CAPTURE_HEIGHT, COVERAGE_EDGE_MARGIN, ROAD_DOME_RADIUS, ROAD_PLANE_RADIUS, coverageBottomFromPixels, refineCoverageBottom } from './road-ground.js'
 
@@ -584,6 +586,9 @@ let vehicleReady = false
 let vehicleLoading = false
 let vehicleLoadVersion = 0
 let displayedVehicleKey = null
+let vehicleWheels = null
+let wheelTravel = []
+let wheelMotionLoad = 0
 const viewTour = createViewTour()
 let cameraTweenVersion = 0
 let tourVehicleHeight = 0.73
@@ -1384,7 +1389,7 @@ function loadVehicleSpec(vehicle) {
       dynamicVehicleMaterials.clear()
       clearGroup(carGroup)
       applyVehicleYaw()
-      const carModel = orientVehicleModel(gltf.scene, vehicleKey)
+      let carModel = orientVehicleModel(gltf.scene, vehicleKey)
       const sourceMaterials = collectObjectMaterials(carModel)
       carModel.name = vehicle.label
       prepareVehicleOptics(carModel, vehicleKey)
@@ -1395,6 +1400,8 @@ function loadVehicleSpec(vehicle) {
       const tourVehicleSize = new THREE.Box3().setFromObject(carModel).getSize(new THREE.Vector3())
       tourVehicleHeight = tourVehicleSize.y
       tourVehicleWidth = tourVehicleSize.z
+      vehicleWheels = rigVehicleWheels(carModel, vehicleKey)
+      carModel = vehicleWheels.model
       vehicleLook.install(carModel)
       syncEnvironment()
 
@@ -1424,6 +1431,7 @@ function loadVehicleSpec(vehicle) {
         return
       }
       clearGroup(carGroup)
+      vehicleWheels = null
       buildFallbackCar()
       tourVehicleHeight = 0.73
       tourVehicleWidth = TOUR_REFERENCE_WIDTH
@@ -2176,6 +2184,20 @@ function renderStudioContext() {
   }
 }
 
+async function loadWheelTravel(sku) {
+  const version = ++wheelMotionLoad
+  wheelTravel = []
+  if (!sku || !/^PL-\d+$/.test(sku)) return
+  try {
+    const response = await fetch(`/api/plates/${encodeURIComponent(sku)}/wheel-motion`)
+    if (!response.ok) return
+    const data = await response.json()
+    if (version !== wheelMotionLoad || !Array.isArray(data.intervals)) return
+    wheelTravel = data.intervals
+    invalidateRender()
+  } catch { /* Missing telemetry must not interrupt footage or invent driving speed. */ }
+}
+
 async function loadVideoSource(src, label, quality = 'rough') {
   // Loading another file must not inherit a catalog clip's production-ready status.
   const currentStitchStatus = stitchStatus(quality)
@@ -2184,6 +2206,7 @@ async function loadVideoSource(src, label, quality = 'rough') {
   const query = new URLSearchParams(location.search)
   const initial = query.get('video')
   const sameSource = initial && new URL(initial, location.href).href === new URL(src, location.href).href
+  void loadWheelTravel(sameSource ? query.get('sku') : null)
   const coverage = Number(query.get('coverageBottom'))
   const native = sameSource && coverage > 0 && coverage <= 1
   stageVideoUniforms.nativeSphere.value = native ? 1 : 0
@@ -2831,7 +2854,16 @@ function renderFrame(now) {
     }
   }
 
-  if (shouldRender) renderer.render(scene, camera)
+  if (shouldRender) {
+    const distance = sampleWheelTravel(wheelTravel, video.currentTime)
+    vehicleWheels?.update(distance)
+    // Read-only diagnostics also make model/clock synchronization testable.
+    canvas.dataset.wheelCount = String(vehicleWheels?.wheels.length ?? 0)
+    canvas.dataset.wheelDistance = distance.toFixed(4)
+    canvas.dataset.wheelAngle = (vehicleWheels?.wheels[0]?.pivot.rotation.z ?? 0).toFixed(4)
+    canvas.dataset.wheelMotion = wheelTravel.length ? 'gps' : 'unavailable'
+    renderer.render(scene, camera)
+  }
   if (sharedVideo && !renderer.getContext().isContextLost() && canPresentPreview({
     rendered: shouldRender, modelReady: vehicleReady, decodedFrameReady,
     lightingReady: !state.reflections || !reflectionInvalidated,
