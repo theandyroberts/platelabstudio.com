@@ -5,7 +5,7 @@ import path from 'node:path';
 import {LICENSE_TITLE,LICENSE_NOTICE,LICENSE_VERSION,LICENSE_SECTIONS,FULFILLMENT_STEPS} from './license';
 import type {SubmittedOrder} from './types';
 import {money,rangeLabel} from './format';
-import {describeStage,UPPER_LABELS} from './schema';
+import {describeStage,UPPER_LABELS,stageAssignmentLabel,DEFERRED_STAGE_WARNING} from './schema';
 async function document(title:string,subtitle:string){
  const pdf=await PDFDocument.create();pdf.registerFontkit(fontkit);pdf.setTitle(title);pdf.setAuthor('Plate Lab Studio');
  const fontPath=path.join(process.cwd(),process.cwd().endsWith('/web')?'lib/checkout/fonts/NotoSans-Regular.ttf':'web/lib/checkout/fonts/NotoSans-Regular.ttf');
@@ -30,7 +30,7 @@ export async function invoicePdf(order:SubmittedOrder){
  const c=order.details.contact;doc.heading('Prepared for');doc.paragraph([c.company,c.name,c.address1,c.address2,`${c.city}${c.region?`, ${c.region}`:''} ${c.postalCode}`,c.country,c.email,c.phone].filter(Boolean).join('\n'));
  doc.heading('Selected footage');for(const item of order.items){doc.paragraph(`${item.sku} | ${money(item.estimateUsd)}`,11);doc.paragraph(`${item.title}\n${item.projectName} / ${item.sceneName}\n${rangeLabel(item)}`,10);}
  doc.heading(`Estimated footage subtotal: ${money(order.estimate_usd)} USD`);doc.paragraph('Stage customization and applicable taxes: to be confirmed. Amount payable now: none. Final pricing may change after scope and availability review.');
- doc.heading('Stage customization');for(const stage of order.details.stages){const project=order.items.find(i=>i.projectId===stage.projectId);doc.paragraph(`${project?.projectName??'Project'}\n${describeStage(stage)}\nUpper display: ${UPPER_LABELS[stage.upper]}${stage.upperNotes?` — ${stage.upperNotes}`:''}${stage.notes?`\n${stage.notes}`:''}`);}
+ doc.heading('Stage customization');for(const stage of order.details.stages){doc.paragraph(`${stageAssignmentLabel(stage,order.items)}\n${describeStage(stage)}\n${stage.mode==='later'?DEFERRED_STAGE_WARNING:`Upper display: ${UPPER_LABELS[stage.upper]}`}${stage.upperNotes?` — ${stage.upperNotes}`:''}${stage.notes?`\n${stage.notes}`:''}`);}
  const d=order.details.delivery;doc.heading('Production & delivery brief');doc.paragraph([`Intended use: ${d.purpose}`,`Requested delivery: ${d.neededBy||'To be confirmed'}`,`Format: ${d.format||'To be confirmed'}`,`Color: ${d.color||'To be confirmed'}`,d.notes].filter(Boolean).join('\n'));
  doc.heading('What happens next');for(const s of FULFILLMENT_STEPS.slice(1))doc.paragraph(`${s.title}: ${s.text}`);
  doc.heading('License status');doc.paragraph(`${order.license_version}. Discussion draft only, not an executed license. Submission records acknowledgment of the review process; approved terms must be accepted before production use.`);

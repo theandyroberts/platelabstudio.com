@@ -783,6 +783,9 @@ export type Database = {
       }
       stage_profiles: {
         Row: {
+          certified_at: string | null
+          certification_reference: string | null
+          checkout_spec: Json | null
           active: boolean
           capabilities: Json
           created_at: string
@@ -796,6 +799,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          certified_at?: string | null
+          certification_reference?: string | null
+          checkout_spec?: Json | null
           active?: boolean
           capabilities?: Json
           created_at?: string
@@ -809,6 +815,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          certified_at?: string | null
+          certification_reference?: string | null
+          checkout_spec?: Json | null
           active?: boolean
           capabilities?: Json
           created_at?: string
