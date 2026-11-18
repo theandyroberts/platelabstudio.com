@@ -4,8 +4,10 @@ import {readOrder} from '@/lib/order';
 export const dynamic='force-dynamic';
 export async function GET(){
   try{
-    const result=await readOrder(await createClient());
-    return NextResponse.json({...result,count:result.items.length},{headers:{'cache-control':'private, no-store'}});
+    const db=await createClient();
+    const result=await readOrder(db);
+    const history=result.authenticated?await db.from("plate_orders").select("id").limit(1):{data:[]};
+    return NextResponse.json({...result,count:result.items.length,hasSubmitted:!!history.data?.length},{headers:{'cache-control':'private, no-store'}});
   }catch{
     return NextResponse.json({error:'Your order could not be loaded. Please retry.'},{status:503,headers:{'cache-control':'private, no-store'}});
   }

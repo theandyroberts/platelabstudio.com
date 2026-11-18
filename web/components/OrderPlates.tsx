@@ -1,0 +1,5 @@
+import Link from 'next/link';
+import type {OrderItem} from '@/lib/order';
+import {money,rangeLabel} from '@/lib/checkout/format';
+import styles from './Checkout.module.css';
+export function OrderPlates({items,remove,pending}:{items:OrderItem[];remove?:(item:OrderItem)=>void;pending?:string|null}){return <ul className={styles.plates}>{items.map(item=><li key={item.id} className={styles.plate}><Link href={`/plate/${item.sku}?from=%2Forder`}>{item.poster&&<img src={item.poster} alt={item.sku} style={{borderColor:item.stitchStatus==='production-ready'?'#3e8851':undefined}}/>}</Link><div><div className={styles.eyebrow}>{item.sku}</div><h3><Link href={`/plate/${item.sku}?from=%2Forder`}>{item.title}</Link></h3><p className={styles.muted}>{item.projectName} / {item.sceneName}</p><p className={styles.muted}>{rangeLabel(item)}</p><div className={styles.plateFooter}><strong>{money(item.estimateUsd)}</strong>{remove&&<button disabled={!!pending} onClick={()=>remove(item)}>{pending===item.id?'Removing…':'Remove'}</button>}</div></div></li>)}</ul>;}

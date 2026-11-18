@@ -1,0 +1,4 @@
+import Link from 'next/link';
+import {LICENSE_TITLE,LICENSE_NOTICE,LICENSE_VERSION,LICENSE_SECTIONS} from '@/lib/checkout/license';
+import styles from '@/components/Checkout.module.css';
+export default function LicensePage(){return <div className="lab-theme planning-theme"><main className={styles.root}><nav className={styles.crumb}><Link href="/order">← Order details</Link></nav><h1 className={styles.heading}>{LICENSE_TITLE}</h1><p>{LICENSE_VERSION}</p><p className={styles.notice}>{LICENSE_NOTICE}</p><div className={styles.actions}><a href="/api/license" className={styles.secondary}>Download draft PDF ↓</a></div><article className={styles.panel} style={{marginTop:24,maxWidth:950,lineHeight:1.8}}>{LICENSE_SECTIONS.map(s=><section key={s.title}><h2 style={{marginTop:30}}>{s.title}</h2><p>{s.text}</p></section>)}</article></main></div>;}

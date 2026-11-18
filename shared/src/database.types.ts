@@ -9,6 +9,13 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      plate_orders: {
+        Row: {id:string;reference:string;user_id:string;submission_key:string;status:string;details:Json;items:Json;estimate_usd:number|null;license_version:string;recipient_email:string;created_at:string;email_status:string;email_sent_at:string|null;email_attempted_at:string|null;email_attempts:number}
+        Insert: {user_id:string;submission_key:string;details:Json;items:Json;license_version:string;recipient_email:string}
+        Update: {email_status?:string;email_sent_at?:string|null;email_attempted_at?:string|null;email_attempts?:number}
+        Relationships: []
+      }
+
       audit_events: {
         Row: {
           actor_user_id: string | null
@@ -959,6 +966,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      submit_plate_order: {Args:{actor:string;request_key:string;order_details:Json;order_items:Json;recipient:string};Returns:string}
+      claim_order_email: {Args:{target_order:string};Returns:boolean}
+
       save_project_scene_grid: {
         Args: { target_project_id: string | null; project_name: string; scene_rows: Json; expected_version?: number; organization_name?: string; display_name?: string }
         Returns: Json

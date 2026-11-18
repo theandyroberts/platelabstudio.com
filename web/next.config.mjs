@@ -7,6 +7,8 @@ const DAILY = [{key: 'Cache-Control', value: 'public, max-age=86400, stale-while
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.NEXT_BUILD_DIR || ".next",
+  outputFileTracingIncludes: {"/api/**": ["./lib/checkout/fonts/*.ttf"]},
   async rewrites() {
     return [{source: '/composite-review/media/:path*', destination: 'https://platelabstudio.com/composite-review/media/:path*'}];
   },
